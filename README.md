@@ -30,6 +30,14 @@ When present, content is organized under:
 - `examples/`
 - `docs/`
 
+## Start Here
+
+- Use case template: `templates/usecase.md`
+- NFR baseline template: `templates/nfr.md`
+- Glossary/entities template: `templates/glossary-entities.md`
+- ADR template: `templates/adr.md`
+- Example use case: `examples/uc-0001-create-widget.md`
+
 ## Public Content Policy
 
 All content in this repository is public and intended for open collaboration.
