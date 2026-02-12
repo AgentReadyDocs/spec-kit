@@ -17,6 +17,8 @@ superseded_by: []
 
 # ADR-XXXX: [Short title]
 
+Risk tiers are defined in `templates/nfr.md` under "Risk Tiers (Doc Gates)".
+
 ## Decision
 | decision |
 |----------|

@@ -16,6 +16,8 @@ code_refs:
 
 # UC-XXXX: [Short title]
 
+Risk tiers are defined in `templates/nfr.md` under "Risk Tiers (Doc Gates)".
+
 ## Goal
 | goal |
 |------|
@@ -107,4 +109,3 @@ code_refs:
 | open_id | question | owner | due | impact |
 |---------|----------|-------|-----|--------|
 | OPEN-001 | [question] | [@owner] | YYYY-MM-DD | [blocked AC / blocked step] |
-
