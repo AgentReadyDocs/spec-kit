@@ -1,11 +1,13 @@
 ---
 id: ADR-XXXX
-type: decision
 title: "[Short title]"
 status: proposed  # proposed | accepted | superseded
 date: YYYY-MM-DD
 owner: "@owner"
 risk_tier: tier1  # tier0 | tier1 | tier2 | tier3
+scope:
+  components: []
+  domains: []
 links:
   use_cases: []
   nfr: ""
