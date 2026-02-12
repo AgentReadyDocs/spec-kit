@@ -7,7 +7,6 @@ date: YYYY-MM-DD
 owner: "@owner"
 risk_tier: tier1  # tier0 | tier1 | tier2 | tier3
 links:
-  system: ""
   use_cases: []
   nfr: ""
 supersedes: []
@@ -52,4 +51,3 @@ superseded_by: []
 | validated | last_reviewed | next_review | evidence_links |
 |----------|---------------|-------------|----------------|
 | true/false | YYYY-MM-DD | YYYY-MM-DD | [links] |
-
