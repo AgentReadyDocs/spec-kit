@@ -4,6 +4,14 @@
 - Pass threshold: >= 70
 - Decision rule: FAIL if any Critical Fail is FAIL; else PASS if score >= 70.
 
+## Required Inputs (Must Load)
+
+- `rubrics/rubric-guidance.md`
+
+Paths are relative to the `spec-kit/` repository root.
+
+If you cannot load the required inputs, return FAIL with reason `MISSING_INPUT: rubric-guidance` and do not score.
+
 ## Critical Fails (Must PASS)
 
 - DS-CF-001 (all): Every use case links to a glossary/entities doc (or explicit `N/A`).

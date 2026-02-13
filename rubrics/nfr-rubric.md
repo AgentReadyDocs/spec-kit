@@ -4,6 +4,14 @@
 - Pass threshold: >= 70
 - Decision rule: FAIL if any Critical Fail is FAIL; else PASS if score >= 70.
 
+## Required Inputs (Must Load)
+
+- `rubrics/rubric-guidance.md`
+
+Paths are relative to the `spec-kit/` repository root.
+
+If you cannot load the required inputs, return FAIL with reason `MISSING_INPUT: rubric-guidance` and do not score.
+
 ## Critical Fails (Must PASS)
 
 - NFR-CF-001 (all): No qualitative-only requirements (e.g., "fast/secure/scalable") without a numeric target or an explicit measurement method.
@@ -28,4 +36,3 @@
 | NFR-S-007 | 8 | all | Change control specifies required artifacts and approvals for high-risk change types. | `## Change Control` |
 | NFR-S-008 | 10 | all | Risk tiers table exists and matches the project’s tier definitions (tier0..tier3 with gates). | `## Risk Tiers (Doc Gates)` |
 | NFR-S-009 | 10 | all | Each major requirement row includes an `enforcement` method that would catch violations before or during runtime. | enforcement columns across sections |
-

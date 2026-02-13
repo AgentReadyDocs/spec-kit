@@ -4,6 +4,14 @@
 - Pass threshold: >= 70
 - Decision rule: FAIL if any Critical Fail is FAIL; else PASS if score >= 70.
 
+## Required Inputs (Must Load)
+
+- `rubrics/rubric-guidance.md`
+
+Paths are relative to the `spec-kit/` repository root.
+
+If you cannot load the required inputs, return FAIL with reason `MISSING_INPUT: rubric-guidance` and do not score.
+
 ## Critical Fails (Must PASS)
 
 - ADR-CF-001 (all): Decision statement matches “We will X to achieve Y, and we will not Z.”
@@ -30,4 +38,3 @@
 | ADR-S-005 | 20 | all | Constraints introduced are testable/enforceable and include where they are enforced (lint/review/test/runtime). | `## Constraints Introduced` |
 | ADR-S-006 | 10 | all | Policy rules (if present) are scoped, enforceable, and non-overlapping with UC/NFR without contradiction. | `## Policy Rules (If Applicable)` |
 | ADR-S-007 | 15 | all | Validation record exists and indicates current validation status plus evidence links (even if validated=false). | `## Validation Record` |
-

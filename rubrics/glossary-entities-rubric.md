@@ -4,6 +4,14 @@
 - Pass threshold: >= 70
 - Decision rule: FAIL if any Critical Fail is FAIL; else PASS if score >= 70.
 
+## Required Inputs (Must Load)
+
+- `rubrics/rubric-guidance.md`
+
+Paths are relative to the `spec-kit/` repository root.
+
+If you cannot load the required inputs, return FAIL with reason `MISSING_INPUT: rubric-guidance` and do not score.
+
 ## Critical Fails (Must PASS)
 
 - GE-CF-001 (all): Terms table exists and is non-empty.
@@ -26,4 +34,3 @@
 | GE-S-005 | 15 | all | Naming is consistent: the same entity.field uses the same type/constraints everywhere it appears in the doc set. | `## Entity Fields` (+ doc spot-check) |
 | GE-S-006 | 10 | all | If the domain uses state (status/phase), a state table exists and references the transition source (UC/ADR). | `## State (If Applicable)` |
 | GE-S-007 | 5 | all | Classification choices are plausible and align with data-handling rules (e.g., avoid logging confidential fields). | `## Entity Fields` (+ NFR/Data Handling) |
-
