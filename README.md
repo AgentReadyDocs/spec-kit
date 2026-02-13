@@ -20,6 +20,19 @@ Open-source templates, rubrics, and linting assets for agent-ready documentation
 - Define interfaces, state transitions, and error behavior explicitly.
 - Express acceptance criteria as executable-style tests.
 
+## Quality Definition
+
+- Correctness first: acceptance criteria, invariants, and contracts define what “right” means.
+- Reduce variance in behavioral outcomes: specs constrain externally observable behavior (state transitions, side effects, errors) so independent implementations converge.
+- Token efficiency: minimal sufficient detail via structure and non-duplication, never by omitting required constraints.
+- Canonical guidance: `docs/agent-ready-quality.md`.
+
+## Non-goals
+
+- Identical code or identical artifacts across implementations.
+- “Guaranteed one-shot” implementation success claims.
+- Any evaluation infrastructure beyond generating excellent agent-ready documentation.
+
 ## Typical Layout
 
 When present, content is organized under:

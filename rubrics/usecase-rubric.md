@@ -10,8 +10,8 @@
   - Evidence: `## Interface Contract` → `### Inputs`.
 - UC-CF-002 (all): Outputs table is present and complete (field, type, required, constraints, example).
   - Evidence: `## Interface Contract` → `### Outputs`.
-- UC-CF-003 (all): Workflow trace is deterministic and includes `state_before` and `state_after` for each step.
-  - Evidence: `## Workflow (Deterministic Trace)`.
+- UC-CF-003 (all): Workflow trace reduces variance in behavioral outcomes and includes `state_before` and `state_after` for each step.
+  - Evidence: `## Workflow (Low-Variance Trace)`.
 - UC-CF-004 (all): Typed error catalog exists and includes retryability + client action (not free-text only).
   - Evidence: `## Error Catalog (Typed)`.
 - UC-CF-005 (all): Acceptance tests table exists and scenarios map to acceptance criteria (AC ids) with `test_ref` or explicit `N/A`.
@@ -33,7 +33,7 @@
 | UC-S-004 | 12 | all | Interface contract is complete: inputs/outputs include constraints + examples; side effects list kind/target/guarantee. | `## Interface Contract` |
 | UC-S-005 | 8 | all | AuthZ rules are explicit allow/deny predicates (no “should/might”). | `### AuthZ` |
 | UC-S-006 | 6 | tier0+ | Idempotency section is present and correct for the operation (filled or explicit `N/A`). | `### Idempotency (If Applicable)` |
-| UC-S-007 | 14 | all | Workflow steps are implementation-grade: reads/writes/emits columns are meaningful, and state transitions are coherent. | `## Workflow (Deterministic Trace)` |
+| UC-S-007 | 14 | all | Workflow steps are implementation-grade: reads/writes/emits columns are meaningful, and state transitions are coherent. | `## Workflow (Low-Variance Trace)` |
 | UC-S-008 | 8 | all | Edge cases cover at least one non-happy-path and include correct error code mapping. | `## Alternatives And Edge Cases` |
 | UC-S-009 | 8 | all | Error catalog includes detection points, status mapping, and telemetry fields needed to debug. | `## Error Catalog (Typed)` |
 | UC-S-010 | 6 | tier1+ | Invariants/policies are enforceable (db/code/gate) and reference validating scenarios/tests. | `## Invariants And Policies` |

@@ -71,7 +71,7 @@ Risk tiers are defined in `templates/nfr.md` under "Risk Tiers (Doc Gates)".
 |-----------------|-----------|------------|
 | PRE-001 | [must already be true] | [how detected] |
 
-## Workflow (Deterministic Trace)
+## Workflow (Low-Variance Trace)
 | step | actor/system | action | reads | writes | emits | state_before | state_after |
 |------|--------------|--------|-------|--------|-------|--------------|-------------|
 | 1 | actor | [command] | [data] | - | - | S0 | S0 |

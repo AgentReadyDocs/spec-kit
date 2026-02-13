@@ -54,6 +54,6 @@ last_updated: YYYY-MM-DD
 | tier | triggers (if any apply) | required_docs | required_uc_fields | required_reviews |
 |------|--------------------------|---------------|--------------------|------------------|
 | tier0 | docs-only changes; no state change; no external calls | UC-lite acceptable | error handling table; ACs | 1 reviewer |
-| tier1 | internal state write; non-sensitive data; no irreversible effects | UC required; NFR baseline applies | interface contract; deterministic workflow; typed errors; scenario table | 1 reviewer |
+| tier1 | internal state write; non-sensitive data; no irreversible effects | UC required; NFR baseline applies | interface contract; low-variance workflow trace; typed errors; scenario table | 1 reviewer |
 | tier2 | external calls; authz changes; schema/contract changes; money movement | UC required; ADR required when decisionful | idempotency required or explicit N/A; edge cases table; invariants table | 2 reviewers |
 | tier3 | irreversible external effects; regulated data scope; broad blast radius | UC required; ADR required | full scenario coverage; explicit rollback/mitigation in UC/ADR | 2 reviewers + designated approver |

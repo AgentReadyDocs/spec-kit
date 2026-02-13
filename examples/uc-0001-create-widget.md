@@ -71,7 +71,7 @@ code_refs:
 |-----------------|-----------|------------|
 | PRE-001 | Workspace exists | lookup by workspace_id |
 
-## Workflow (Deterministic Trace)
+## Workflow (Low-Variance Trace)
 | step | actor/system | action | reads | writes | emits | state_before | state_after |
 |------|--------------|--------|-------|--------|-------|--------------|-------------|
 | 1 | actor | POST /widgets {workspace_id,name} | - | - | - | S0 | S0 |
