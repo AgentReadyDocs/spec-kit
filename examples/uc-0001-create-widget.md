@@ -8,7 +8,7 @@ risk_tier: tier1
 system: "Widget Service"
 links:
   glossary: "./glossary-entities-example.md"
-  nfr: "../templates/nfr.md"
+  nfr: "./nfr-0001-widget-service.md"
 code_refs:
   implementation: ""
   tests: ""
@@ -30,7 +30,7 @@ code_refs:
 ## Actors
 | actor_id | role | permissions |
 |----------|------|-------------|
-| ACTOR_USER | Workspace user | widget:create |
+| workspace_user | Workspace user | widget:create |
 
 ## Entities (Referenced)
 | entity | identifier | notes |
@@ -59,7 +59,7 @@ code_refs:
 ### AuthZ
 | rule_id | actor_id | condition | decision |
 |---------|----------|-----------|----------|
-| AUTHZ-001 | ACTOR_USER | actor has widget:create for workspace_id | allow |
+| AUTHZ-001 | workspace_user | actor has widget:create for workspace_id | allow |
 
 ### Idempotency (If Applicable)
 | idempotency_key | scope | ttl | behavior_on_replay |
@@ -113,4 +113,3 @@ code_refs:
 ## Open Questions
 | open_id | question | owner | due | impact |
 |---------|----------|-------|-----|--------|
-

@@ -37,6 +37,16 @@ When present, content is organized under:
 - Glossary/entities template: `templates/glossary-entities.md`
 - ADR template: `templates/adr.md`
 - Example use case: `examples/uc-0001-create-widget.md`
+- Example glossary/entities: `examples/glossary-entities-example.md`
+- Example NFR baseline: `examples/nfr-0001-widget-service.md`
+
+## Rubrics
+
+- Use case rubric: `rubrics/usecase-rubric.md`
+- NFR baseline rubric: `rubrics/nfr-rubric.md`
+- Glossary/entities rubric: `rubrics/glossary-entities-rubric.md`
+- ADR rubric: `rubrics/adr-rubric.md`
+- Doc-set rubric: `rubrics/docset-rubric.md`
 
 ## Public Content Policy
 
