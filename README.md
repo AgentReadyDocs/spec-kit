@@ -1,6 +1,6 @@
 # spec-kit
 
-Open-source templates, rubrics, and linting assets for agent-ready documentation.
+Open-source templates, rubrics, and co-authoring/review skills for agent-ready documentation.
 
 ## Purpose
 
@@ -11,6 +11,7 @@ Open-source templates, rubrics, and linting assets for agent-ready documentation
 - Templates for use cases, NFRs, ADRs, PRDs, and related specification docs
 - Rubrics and pass/fail gates for quality review
 - Validation and linting rules for schema and clarity checks (where provided)
+- Co-authoring and review skills for applying templates and rubrics
 - Examples that demonstrate agent-ready specification quality (where provided)
 
 ## Core Principles
@@ -39,6 +40,7 @@ When present, content is organized under:
 
 - `templates/`
 - `rubrics/`
+- `skills/`
 - `lint/`
 - `examples/`
 - `docs/`
@@ -49,6 +51,7 @@ When present, content is organized under:
 - NFR baseline template: `templates/nfr.md`
 - Glossary/entities template: `templates/glossary-entities.md`
 - ADR template: `templates/adr.md`
+- Skills: `skills/README.md`
 - Example use case: `examples/uc-0001-create-widget.md`
 - Example glossary/entities: `examples/glossary-entities-example.md`
 - Example NFR baseline: `examples/nfr-0001-widget-service.md`
