@@ -19,6 +19,8 @@ superseded_by: []
 
 Risk tiers are defined in `templates/nfr.md` under "Risk Tiers (Doc Gates)".
 
+Review this document against `rubrics/adr-rubric.md` and `rubrics/rubric-guidance.md`.
+
 ## Decision
 | decision |
 |----------|

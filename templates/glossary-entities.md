@@ -8,6 +8,8 @@ last_updated: YYYY-MM-DD
 
 # Glossary And Entities
 
+Review this document against `rubrics/glossary-entities-rubric.md` and `rubrics/rubric-guidance.md`.
+
 ## Terms
 | term | definition (one line) | allowed_synonyms | banned_synonyms |
 |------|------------------------|------------------|-----------------|
@@ -32,4 +34,3 @@ last_updated: YYYY-MM-DD
 | entity | state_field | allowed_states | transitions_source |
 |--------|-------------|----------------|--------------------|
 | [Entity] | [field] | [S0,S1,S2] | [UC references / ADR] |
-

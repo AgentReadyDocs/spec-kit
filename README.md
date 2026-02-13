@@ -60,6 +60,7 @@ When present, content is organized under:
 - Glossary/entities rubric: `rubrics/glossary-entities-rubric.md`
 - ADR rubric: `rubrics/adr-rubric.md`
 - Doc-set rubric: `rubrics/docset-rubric.md`
+- Rubric guidance (required input): `rubrics/rubric-guidance.md`
 
 ## Public Content Policy
 

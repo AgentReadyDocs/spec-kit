@@ -8,6 +8,8 @@ last_updated: YYYY-MM-DD
 
 # NFR Baseline: [System / Product]
 
+Review this document against `rubrics/nfr-rubric.md` and `rubrics/rubric-guidance.md`.
+
 ## Performance
 | area | metric | target | measurement_point | enforcement |
 |------|--------|--------|-------------------|------------|

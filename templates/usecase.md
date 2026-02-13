@@ -18,6 +18,8 @@ code_refs:
 
 Risk tiers are defined in `templates/nfr.md` under "Risk Tiers (Doc Gates)".
 
+Review this document against `rubrics/usecase-rubric.md` and `rubrics/rubric-guidance.md`.
+
 ## Goal
 | goal |
 |------|
