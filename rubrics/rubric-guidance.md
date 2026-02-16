@@ -30,3 +30,36 @@ Behavioral outcomes are the externally observable semantics, typically including
 2. For any rule that references linked docs (glossary/NFR/ADR), load those docs too.
 3. Evaluate **Critical Fails** first (binary PASS/FAIL).
 4. If no Critical Fail FAILs, score the **Scored Checks** and apply the pass threshold.
+
+## Scoring, Ratings, And Grade Bands
+
+Most `spec-kit/rubrics/*` use a 100-point score plus a pass threshold.
+
+- `score`: sum of earned points (0..100)
+- `rating`: normalized to 0..5 as `rating = score / 20`
+- `grade` (from `rating`):
+  - **A:** 4.5–5.0
+  - **B:** 3.5–4.49
+  - **C:** 2.5–3.49
+  - **D:** 1.5–2.49
+  - **F:** < 1.5
+
+If a rubric has a different scoring system, follow that rubric's explicit instructions and treat this section as guidance only.
+
+## Findings Priorities (P1/P2/P3)
+
+When reporting findings, label each with a priority:
+
+- **P1 (Critical):** likely to cause broken workflows, unsafe actions, or repeated failure loops.
+- **P2 (Important):** likely to waste tokens/time, reduce output quality, or force repeated clarification.
+- **P3 (Nice):** polish, readability, and future-proofing.
+
+## Evidence-Backed Verification (PASS/FAIL/SKIP)
+
+Prefer check-by-check verification with **PASS/FAIL/SKIP** results.
+
+- **PASS:** the required artifact/constraint is present and correct.
+- **FAIL:** missing or incorrect; include evidence (what was checked and where).
+- **SKIP:** verification would require executing code, accessing external systems, or secrets.
+
+Evidence should be specific and local when possible: a section heading name, a table name, or a referenced identifier.

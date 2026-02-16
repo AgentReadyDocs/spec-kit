@@ -3,6 +3,8 @@
 - Total points: 100
 - Pass threshold: >= 70
 - Decision rule: FAIL if any Critical Fail is FAIL; else PASS if score >= 70.
+- Reporting guidance: use **P1/P2/P3** priorities and **PASS/FAIL/SKIP** verification per `rubrics/rubric-guidance.md`.
+- Optional grade: compute `rating = score / 20` (0..5) and map to A–F per `rubrics/rubric-guidance.md`.
 
 ## Required Inputs (Must Load)
 
