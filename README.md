@@ -41,7 +41,8 @@ When present, content is organized under:
 - `templates/`
 - `rubrics/`
 - `skills/`
-- `lint/`
+- `src/`
+- `tests/`
 - `examples/`
 - `docs/`
 
@@ -55,6 +56,34 @@ When present, content is organized under:
 - Example use case: `examples/uc-0001-create-widget.md`
 - Example glossary/entities: `examples/glossary-entities-example.md`
 - Example NFR baseline: `examples/nfr-0001-widget-service.md`
+
+## Linters (CLI)
+
+Packaged CLI linters are in `src/spec_kit_linters/` and exposed via `pyproject.toml`.
+
+- `spec-kit-skill-lint <skill-dir>`
+- `spec-kit-agents-md-lint <path-to-AGENTS.md>`
+
+Run locally from the repo:
+
+```bash
+uv sync
+uv run spec-kit-skill-lint ./skills/authoring-agents-md
+uv run spec-kit-agents-md-lint ./AGENTS.md
+```
+
+Run from GitHub without local install:
+
+```bash
+uvx --from git+https://github.com/AgentReadyDocs/spec-kit spec-kit-skill-lint ./skills/authoring-agents-md
+uvx --from git+https://github.com/AgentReadyDocs/spec-kit spec-kit-agents-md-lint ./AGENTS.md
+```
+
+For reproducible runs, pin a tag or commit:
+
+```bash
+uvx --from git+https://github.com/AgentReadyDocs/spec-kit@<tag-or-sha> spec-kit-agents-md-lint ./AGENTS.md
+```
 
 ## Rubrics
 
