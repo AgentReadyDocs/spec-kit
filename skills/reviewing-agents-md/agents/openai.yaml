@@ -1,0 +1,4 @@
+interface:
+  display_name: "Reviewing AGENTS.md"
+  short_description: "Grade an AGENTS.md with verification-backed findings"
+  default_prompt: "Use $reviewing-agents-md to review the AGENTS.md at ./path/to/AGENTS.md (read-only). Verify high-impact claims with a small budget of spot-checks (commands, paths, patterns) and mark PASS/FAIL/SKIP with evidence. Score all 7 dimensions (1–5, half-points allowed) using references/agents-md-rubric.md, compute weighted score/grade, then output the report using the exact Output Format in SKILL.md (max 15 findings; include a concrete recommendation for every finding)."

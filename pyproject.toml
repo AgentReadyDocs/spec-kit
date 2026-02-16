@@ -1,0 +1,20 @@
+[build-system]
+requires = ["hatchling>=1.25.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "spec-kit-linters"
+version = "0.1.0"
+description = "CLI linters for spec-kit skills and AGENTS.md files."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [{ name = "AgentReadyDocs" }]
+dependencies = []
+
+[project.scripts]
+spec-kit-skill-lint = "spec_kit_linters.skill_linter:main"
+spec-kit-agents-md-lint = "spec_kit_linters.agents_md_linter:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/spec_kit_linters"]

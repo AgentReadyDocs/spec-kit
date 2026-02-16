@@ -9,6 +9,7 @@ Co-authoring and review skills for creating agent-ready documentation using `spe
 - Elicit requirements and resolve ambiguity
 - Draft specs that satisfy `spec-kit` templates
 - Review specs against `rubrics/*` (including required `rubrics/rubric-guidance.md`)
+- Author and review `AGENTS.md` for repository-level agent instructions
 
 ## Design Rules
 
@@ -17,15 +18,26 @@ Co-authoring and review skills for creating agent-ready documentation using `spe
 - Separate author and critic responsibilities to reduce blind spots.
 - Version skill contracts when expected inputs/outputs change.
 
-## Typical Layout
+## Included Skills
 
-When present, content is organized under:
+- `authoring-agents-md/`: generate or update `AGENTS.md` and agent import files.
+- `reviewing-agents-md/`: review and score `AGENTS.md` with evidence-backed findings.
 
-- `claude-code/`
-- `codex/`
-- `shared/`
-- `examples/`
-- `docs/`
+## Linters
+
+- Packaged implementation: `src/spec_kit_linters/`
+- CLI commands: `spec-kit-skill-lint`, `spec-kit-agents-md-lint`
+- Compatibility wrappers: `skills/linters/validate_skill.py`, `skills/linters/validate_agents_md.py`
+- Agents rubric reference: `skills/linters/agents-md-linter-rubric.md`
+
+## Skill Structure
+
+Each skill directory follows:
+
+- `SKILL.md`
+- `agents/openai.yaml`
+- `references/` (rubrics, examples, schema notes)
+- `scripts/` (optional helper automation)
 
 ## Compatibility
 
