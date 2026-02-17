@@ -1,0 +1,5 @@
+interface:
+  display_name: "Reviewing Glossary + Entities"
+  short_description: "Score a glossary/entities doc with rubric-bound PASS/FAIL and patch guidance"
+  default_prompt: "Use $reviewing-glossary-entities to review a Glossary + Entities doc (read-only). Load rubrics/rubric-guidance.md and rubrics/glossary-entities-rubric.md. Evaluate Critical Fails GE-CF-001..004 with PASS/FAIL/SKIP evidence, then score GE-S-001..007 to compute score, rating=score/20, and grade. Output the report using the exact format in SKILL.md with at most 15 findings."
+

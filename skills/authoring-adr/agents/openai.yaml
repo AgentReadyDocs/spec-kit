@@ -1,0 +1,5 @@
+interface:
+  display_name: "Authoring ADR"
+  short_description: "Draft or tighten an ADR from template with rubric self-checks"
+  default_prompt: "Use $authoring-adr to create or update an ADR Markdown doc from templates/adr.md. Ask only for missing facts needed to satisfy rubrics/adr-rubric.md Critical Fails (ADR-CF-001..006). Produce a rubric-ready ADR and a short self-check summary, then run a critic pass by invoking $reviewing-adr and apply P1/P2 findings."
+

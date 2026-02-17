@@ -1,0 +1,5 @@
+interface:
+  display_name: "Reviewing NFR Baseline"
+  short_description: "Score an NFR baseline with rubric-bound PASS/FAIL and patch guidance"
+  default_prompt: "Use $reviewing-nfr to review an NFR Baseline (read-only). Load rubrics/rubric-guidance.md and rubrics/nfr-rubric.md. Evaluate Critical Fails NFR-CF-001..004 with PASS/FAIL/SKIP evidence, then score NFR-S-001..009 to compute score, rating=score/20, and grade. Output the report using the exact format in SKILL.md with at most 15 findings."
+

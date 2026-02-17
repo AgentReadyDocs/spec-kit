@@ -1,0 +1,24 @@
+{
+  "version": "0.1.0",
+  "description": "AgentReadyDocs CLI: lint agent-ready docs, install skills, and access templates/rubrics",
+  "homepage": "https://github.com/AgentReadyDocs/spec-kit",
+  "license": "Apache-2.0",
+  "architecture": {
+    "64bit": {
+      "url": "https://github.com/AgentReadyDocs/spec-kit/releases/download/v0.1.0/ard-x86_64-pc-windows-msvc.zip",
+      "hash": "REPLACE_ME"
+    }
+  },
+  "bin": "ard.exe",
+  "checkver": {
+    "github": "https://github.com/AgentReadyDocs/spec-kit"
+  },
+  "autoupdate": {
+    "architecture": {
+      "64bit": {
+        "url": "https://github.com/AgentReadyDocs/spec-kit/releases/download/v$version/ard-x86_64-pc-windows-msvc.zip"
+      }
+    }
+  }
+}
+

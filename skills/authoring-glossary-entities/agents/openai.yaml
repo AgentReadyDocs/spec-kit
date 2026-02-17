@@ -1,0 +1,5 @@
+interface:
+  display_name: "Authoring Glossary + Entities"
+  short_description: "Draft or tighten a glossary/entities doc from template with rubric self-checks"
+  default_prompt: "Use $authoring-glossary-entities to create or update a Glossary + Entities doc from templates/glossary-entities.md. Ask only for missing facts needed to satisfy rubrics/glossary-entities-rubric.md Critical Fails (GE-CF-001..004). Produce a rubric-ready doc and a short self-check summary, then run a critic pass by invoking $reviewing-glossary-entities and apply P1/P2 findings."
+

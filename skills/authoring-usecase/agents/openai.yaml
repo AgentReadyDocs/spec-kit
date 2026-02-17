@@ -1,0 +1,5 @@
+interface:
+  display_name: "Authoring Use Case"
+  short_description: "Draft or tighten a spec-kit use case from template with rubric self-checks"
+  default_prompt: "Use $authoring-usecase to create or update a use case Markdown doc from templates/usecase.md. Ask only for missing facts needed to satisfy rubrics/usecase-rubric.md Critical Fails (UC-CF-001..008). Produce a rubric-ready document and a short self-check summary, then run a critic pass by invoking $reviewing-usecase and apply P1/P2 findings."
+

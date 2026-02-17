@@ -1,0 +1,5 @@
+interface:
+  display_name: "Authoring NFR Baseline"
+  short_description: "Draft or tighten an NFR baseline from template with rubric self-checks"
+  default_prompt: "Use $authoring-nfr to create or update an NFR Baseline from templates/nfr.md. Ask only for missing facts needed to satisfy rubrics/nfr-rubric.md Critical Fails (NFR-CF-001..004), especially numeric targets, measurement points, and enforcement. Produce a rubric-ready NFR and a short self-check summary, then run a critic pass by invoking $reviewing-nfr and apply P1/P2 findings."
+

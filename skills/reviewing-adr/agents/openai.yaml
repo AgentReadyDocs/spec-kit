@@ -1,0 +1,5 @@
+interface:
+  display_name: "Reviewing ADR"
+  short_description: "Score an ADR with rubric-bound PASS/FAIL and patch guidance"
+  default_prompt: "Use $reviewing-adr to review an ADR Markdown document (read-only). Load rubrics/rubric-guidance.md and rubrics/adr-rubric.md. Evaluate Critical Fails ADR-CF-001..006 with PASS/FAIL/SKIP evidence, then score ADR-S-001..007 to compute score, rating=score/20, and grade. Output the report using the exact format in SKILL.md with at most 15 findings."
+

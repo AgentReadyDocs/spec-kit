@@ -52,24 +52,66 @@ When present, content is organized under:
 - NFR baseline template: `templates/nfr.md`
 - Glossary/entities template: `templates/glossary-entities.md`
 - ADR template: `templates/adr.md`
-- Skills: `skills/README.md`
+- AGENTS.md starters: `templates/agents-md-typescript.md`, `templates/agents-md-go.md`
+- Adoption guide (use in TS/Go repos): `docs/adoption.md`
+- Skills index: `skills/README.md`
 - Example use case: `examples/uc-0001-create-widget.md`
 - Example glossary/entities: `examples/glossary-entities-example.md`
 - Example NFR baseline: `examples/nfr-0001-widget-service.md`
 
+## Install `ard` (recommended)
+
+`ard` is a single-binary CLI for linting agent-ready docs and installing skills.
+
+macOS (Homebrew, once the tap is published):
+
+```bash
+brew install agentreadydocs/tap/ard
+```
+
+Linux/macOS (verified installer via GitHub Releases):
+
+```bash
+curl -fsSL -o install-ard.sh https://raw.githubusercontent.com/AgentReadyDocs/spec-kit/main/scripts/install_ard.sh
+sh install-ard.sh --version <tag>
+```
+
+## Common usage
+
+```bash
+ard lint ./AGENTS.md
+ard lint .                # docset (docs/ + examples/)
+ard skill install --target codex --target claude --namespace spec-kit --overwrite
+```
+
 ## Linters (CLI)
 
-Packaged CLI linters are in `src/spec_kit_linters/` and exposed via `pyproject.toml`.
+Packaged CLI linters exist in two forms:
 
-- `spec-kit-skill-lint <skill-dir>`
-- `spec-kit-agents-md-lint <path-to-AGENTS.md>`
+- Rust single-binary: `ard` (recommended for adoption in TS/Go repos)
+- Python reference implementation in `src/spec_kit_linters/` (exposed via `pyproject.toml`)
+
+`ard` subcommands:
+
+- `ard lint <path>` (auto-detect)
+- `ard lint agents-md <path>`
+- `ard lint docset <root>`
+- `ard lint skill <skill-dir>`
+- `ard skill install ...`
 
 Run locally from the repo:
 
 ```bash
 uv sync
+uv run pytest
+
+# Python reference linters
 uv run spec-kit-skill-lint ./skills/authoring-agents-md
 uv run spec-kit-agents-md-lint ./AGENTS.md
+uv run spec-kit-docset-lint .
+
+# `ard` from source (requires Rust toolchain)
+cargo run -p ard -- lint ./AGENTS.md
 ```
 
 Run from GitHub without local install:
@@ -77,6 +119,7 @@ Run from GitHub without local install:
 ```bash
 uvx --from git+https://github.com/AgentReadyDocs/spec-kit spec-kit-skill-lint ./skills/authoring-agents-md
 uvx --from git+https://github.com/AgentReadyDocs/spec-kit spec-kit-agents-md-lint ./AGENTS.md
+uvx --from git+https://github.com/AgentReadyDocs/spec-kit spec-kit-docset-lint .
 ```
 
 For reproducible runs, pin a tag or commit:
