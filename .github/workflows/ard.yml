@@ -1,0 +1,24 @@
+name: ard
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ard
+        run: |
+          curl -fsSL -o install-ard.sh https://raw.githubusercontent.com/AgentReadyDocs/spec-kit/main/scripts/install_ard.sh
+          sh install-ard.sh --version v0.1.0 --to ./bin
+          echo "$PWD/bin" >> "$GITHUB_PATH"
+
+      - name: Lint agent instructions and specs
+        run: |
+          ard lint ./AGENTS.md
+          ard lint .
+

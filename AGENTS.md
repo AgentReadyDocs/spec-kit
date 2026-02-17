@@ -4,6 +4,8 @@ agents-md-version: 1
 
 ## CRITICAL
 
+- MUST: Use `cargo` as the package manager for Rust dependency/build flows.
+- MUST: Run `ard lint ...` before opening a PR.
 - MUST: Use `ard` as the only supported CLI for linting/install flows.
 - MUST: Run Rust test commands before PR: `cargo test -p ard`.
 - MUST: Keep line coverage at or above 90%: `cargo llvm-cov -p ard --fail-under-lines 90`.
@@ -12,6 +14,7 @@ agents-md-version: 1
 - NEVER: Bypass hook checks with `--no-verify`.
 - NEVER: Re-introduce Python runtime, Python package entrypoints, or `uv`-based CLI workflows.
 - NEVER: Commit secrets, credentials, PII, or customer-identifying data.
+- NEVER: Hand-edit generated artifacts (generated) unless the change is intentional and reviewed.
 - PREFER: Built-in file/glob/grep/editor tools over shell one-liners when both are equivalent.
 - ON FAIL: Read the full traceback/output before retrying.
 - ON FAIL (lint): Run the failing `ard lint ...` target directly, fix the issue, then re-run the broader command.
@@ -35,6 +38,8 @@ agents-md-version: 1
 ## Commands
 
 ```bash
+# install
+cargo build -p ard
 # lint:skill
 cargo run -p ard -- lint skill ./skills/authoring-agents-md
 # lint:agents

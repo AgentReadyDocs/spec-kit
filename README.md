@@ -1,120 +1,124 @@
 # spec-kit
 
-Open-source templates, rubrics, and co-authoring/review skills for agent-ready documentation.
+Templates, rubrics, and a single-binary linter (`ard`) for writing **agent-ready specs** that reduce ambiguity before implementation.
 
-## Purpose
+![ci](https://github.com/AgentReadyDocs/spec-kit/actions/workflows/ci.yml/badge.svg)
+![ard](https://github.com/AgentReadyDocs/spec-kit/actions/workflows/ard.yml/badge.svg)
 
-`spec-kit` is the canonical source for specification artifacts that reduce ambiguity before implementation.
+## Why this exists
 
-## What Belongs Here
+Teams ship faster when specs are:
 
-- Templates for use cases, NFRs, ADRs, PRDs, and related specification docs
-- Rubrics and pass/fail gates for quality review
-- Validation and linting rules for schema and clarity checks (where provided)
-- Co-authoring and review skills for applying templates and rubrics
-- Examples that demonstrate agent-ready specification quality (where provided)
+- **Executable-style**: acceptance criteria reads like tests and matches real interfaces and errors.
+- **Low-variance**: independent implementations converge on the same externally observable behavior.
+- **Reviewable**: structured artifacts + rubrics allow consistent pass/fail gates.
 
-## Core Principles
+Canonical quality guidance: `docs/agent-ready-quality.md`.
 
-- Make unknowns explicit (`[OPEN]`, `[ASSUMPTION]`, owner, due date).
-- Prefer invariants and constraints over narrative prose.
-- Define interfaces, state transitions, and error behavior explicitly.
-- Express acceptance criteria as executable-style tests.
+## Try it in 60 seconds
 
-## Quality Definition
-
-- Correctness first: acceptance criteria, invariants, and contracts define what “right” means.
-- Reduce variance in behavioral outcomes: specs constrain externally observable behavior (state transitions, side effects, errors) so independent implementations converge.
-- Token efficiency: minimal sufficient detail via structure and non-duplication, never by omitting required constraints.
-- Canonical guidance: `docs/agent-ready-quality.md`.
-
-## Non-goals
-
-- Identical code or identical artifacts across implementations.
-- “Guaranteed one-shot” implementation success claims.
-- Any evaluation infrastructure beyond generating excellent agent-ready documentation.
-
-## Typical Layout
-
-When present, content is organized under:
-
-- `templates/`
-- `rubrics/`
-- `skills/`
-- `src/`
-- `tests/`
-- `examples/`
-- `docs/`
-
-## Start Here
-
-- Use case template: `templates/usecase.md`
-- NFR baseline template: `templates/nfr.md`
-- Glossary/entities template: `templates/glossary-entities.md`
-- ADR template: `templates/adr.md`
-- AGENTS.md starters: `templates/agents-md-typescript.md`, `templates/agents-md-go.md`
-- Adoption guide (use in TS/Go repos): `docs/adoption.md`
-- Skills index: `skills/README.md`
-- Example use case: `examples/uc-0001-create-widget.md`
-- Example glossary/entities: `examples/glossary-entities-example.md`
-- Example NFR baseline: `examples/nfr-0001-widget-service.md`
-
-## Install `ard` (recommended)
-
-`ard` is a single-binary CLI for linting agent-ready docs and installing skills.
-
-macOS (Homebrew, once the tap is published):
-
-```bash
-brew install agentreadydocs/tap/ard
-```
-
-Linux/macOS (verified installer via GitHub Releases):
+Install the `ard` CLI (verified installer via GitHub Releases):
 
 ```bash
 curl -fsSL -o install-ard.sh https://raw.githubusercontent.com/AgentReadyDocs/spec-kit/main/scripts/install_ard.sh
-sh install-ard.sh --version <tag>
+sh install-ard.sh --version v0.1.0
 ```
 
-## Common usage
+Run lint checks:
 
 ```bash
 ard lint ./AGENTS.md
-ard lint .                # docs (docs/ + examples/)
-ard skill install --target codex --target claude --namespace spec-kit --overwrite
+ard lint .                # docset lint (docs/ + examples/)
 ```
 
-## Linters (CLI)
-
-`spec-kit` uses a single CLI: `ard`.
-
-`ard` subcommands:
-
-- `ard lint <path>` (auto-detect)
-- `ard lint agents-md <path>`
-- `ard lint docs <root>`
-- `ard lint skill <skill-dir>`
-- `ard skill install ...`
-
-Run locally from the repo:
+If you want machine-readable output:
 
 ```bash
-# `ard` from source (requires Rust toolchain)
+ard lint --format json ./AGENTS.md
+ard lint --format json .
+```
+
+## What failures look like
+
+`ard` reports stable check IDs so teams can enforce rules without brittle parsing:
+
+```text
+[FAIL] Errors:
+- DS-ID-001: Missing required frontmatter `id`. (docs/foo.md)
+- DS-CF-004: Tier2+ use case appears decisionful but no ADR links it via frontmatter links.use_cases. (docs/uc-0002.md)
+```
+
+## Add to CI (GitHub Actions)
+
+This is a copy/paste starting point. Pin the version you want to run in CI.
+
+```yaml
+name: ard
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ard
+        run: |
+          curl -fsSL -o install-ard.sh https://raw.githubusercontent.com/AgentReadyDocs/spec-kit/main/scripts/install_ard.sh
+          sh install-ard.sh --version v0.1.0 --to ./bin
+          echo "$PWD/bin" >> "$GITHUB_PATH"
+
+      - name: Lint agent instructions and specs
+        run: |
+          ard lint ./AGENTS.md
+          ard lint .
+```
+
+## What `ard lint` checks
+
+`ard` is intentionally narrow: it validates structure and cross-file consistency so reviews stay focused on design decisions.
+
+- `ard lint ./AGENTS.md`: required sections (`## CRITICAL`, `## Commands`) and guardrails (MUST/NEVER/ON FAIL patterns), plus lightweight link/vagueness checks (stricter with `--strict`).
+- `ard lint <skill-dir>`: basic skill contract shape (expects `SKILL.md` and consistent contents).
+- `ard lint .` (docset): frontmatter presence/uniqueness, internal markdown link resolution, required cross-doc links (for example use case `links.glossary` / `links.nfr`), and deterministic docset consistency gates (for example tier2+ decisionful use cases must be linked from an ADR).
+
+## Start here
+
+- Templates:
+  - Use case: `templates/usecase.md`
+  - NFR baseline: `templates/nfr.md`
+  - Glossary/entities: `templates/glossary-entities.md`
+  - ADR: `templates/adr.md`
+  - AGENTS.md starters: `templates/agents-md-typescript.md`, `templates/agents-md-go.md`
+- Rubrics:
+  - Use case rubric: `rubrics/usecase-rubric.md`
+  - NFR rubric: `rubrics/nfr-rubric.md`
+  - Glossary/entities rubric: `rubrics/glossary-entities-rubric.md`
+  - ADR rubric: `rubrics/adr-rubric.md`
+  - Doc-set rubric: `rubrics/docset-rubric.md` (plus required `rubrics/rubric-guidance.md`)
+- Skills:
+  - Index: `skills/README.md`
+  - Install into agent tools: `ard skill install --target codex --target claude --namespace spec-kit --overwrite`
+- Examples:
+  - Use case: `examples/uc-0001-create-widget.md`
+  - Glossary/entities: `examples/glossary-entities-example.md`
+  - NFR baseline: `examples/nfr-0001-widget-service.md`
+
+Adoption guide for TS/Go repos: `docs/adoption.md`.
+
+## `ard` from source (requires Rust toolchain)
+
+```bash
 cargo test -p ard
 cargo llvm-cov -p ard --fail-under-lines 90
 cargo run -p ard -- lint ./AGENTS.md
 ```
 
-## Rubrics
-
-- Use case rubric: `rubrics/usecase-rubric.md`
-- NFR baseline rubric: `rubrics/nfr-rubric.md`
-- Glossary/entities rubric: `rubrics/glossary-entities-rubric.md`
-- ADR rubric: `rubrics/adr-rubric.md`
-- Doc-set rubric: `rubrics/docset-rubric.md`
-- Rubric guidance (required input): `rubrics/rubric-guidance.md`
-
-## Public Content Policy
+## Public content policy
 
 All content in this repository is public and intended for open collaboration.
 
@@ -130,7 +134,7 @@ Licensed under the Apache License, Version 2.0. See `LICENSE`.
 Contributions are welcome. Read `CONTRIBUTING.md` before opening a PR.
 By contributing, you agree your contributions are licensed under Apache-2.0.
 
-## Content And Data Policy
+## Content and data policy
 
 - Do not contribute proprietary, confidential, or customer-identifying material.
 - Do not include personal data (PII), credentials, or secrets.
