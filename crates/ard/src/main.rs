@@ -46,6 +46,12 @@ enum Command {
     Template(AssetCmd),
     /// List/print embedded rubrics.
     Rubric(AssetCmd),
+    /// Run ARSF conformance checks (Core/Strict).
+    Conformance(ConformanceCmd),
+    /// Initialize an ARSF docset skeleton in a repo.
+    Init(InitCmd),
+    /// Create a new ARSF document from templates.
+    New(NewCmd),
 }
 
 #[derive(Debug, Parser)]
@@ -136,6 +142,125 @@ enum AssetSubcommand {
     Print { name: String },
 }
 
+#[derive(Debug, Clone, Copy, ValueEnum)]
+enum ConformanceProfile {
+    Core,
+    Strict,
+}
+
+#[derive(Debug, Parser)]
+struct ConformanceCmd {
+    #[command(subcommand)]
+    subcommand: ConformanceSubcommand,
+}
+
+#[derive(Debug, Subcommand)]
+enum ConformanceSubcommand {
+    /// Check a docset directory for ARSF conformance.
+    Run {
+        /// Conformance profile.
+        #[arg(long, value_enum, default_value_t = ConformanceProfile::Core)]
+        profile: ConformanceProfile,
+        /// Output format.
+        #[arg(long, value_enum, default_value_t = OutputFormat::Text)]
+        format: OutputFormat,
+        /// Docs directory name under the root.
+        #[arg(long, default_value = "docs")]
+        docs_dir: String,
+        /// Examples directory name under the root.
+        #[arg(long, default_value = "examples")]
+        examples_dir: String,
+        /// Docset root directory to check.
+        root: PathBuf,
+    },
+}
+
+#[derive(Debug, Parser)]
+struct InitCmd {
+    /// Directory to create ARSF docset under.
+    #[arg(long, default_value = "spec")]
+    root: PathBuf,
+    /// Name of docs directory to create under root.
+    #[arg(long, default_value = "docs")]
+    docs_dir: String,
+    /// Name of examples directory to create under root.
+    #[arg(long, default_value = "examples")]
+    examples_dir: String,
+    /// Write (or overwrite) the GitHub Actions workflow.
+    #[arg(long)]
+    workflow: bool,
+    /// Overwrite existing files.
+    #[arg(long)]
+    overwrite: bool,
+    /// `ard` version tag to pin in generated workflow (e.g. v0.1.0).
+    #[arg(long)]
+    ard_version: Option<String>,
+}
+
+#[derive(Debug, Parser)]
+struct NewCmd {
+    #[command(subcommand)]
+    subcommand: NewSubcommand,
+}
+
+#[derive(Debug, Subcommand)]
+enum NewSubcommand {
+    /// Create a new use case document.
+    UseCase {
+        #[arg(long)]
+        id: String,
+        #[arg(long)]
+        title: String,
+        #[arg(long)]
+        owner: Option<String>,
+        #[arg(long, default_value = "tier1")]
+        risk_tier: String,
+        #[arg(long, default_value = "N/A")]
+        glossary: String,
+        #[arg(long, default_value = "N/A")]
+        nfr: String,
+        #[arg(long)]
+        dir: Option<PathBuf>,
+    },
+    /// Create a new ADR document.
+    Adr {
+        #[arg(long)]
+        id: String,
+        #[arg(long)]
+        title: String,
+        #[arg(long)]
+        owner: Option<String>,
+        #[arg(long, default_value = "tier1")]
+        risk_tier: String,
+        #[arg(long, default_value = "N/A")]
+        nfr: String,
+        #[arg(long)]
+        dir: Option<PathBuf>,
+    },
+    /// Create a new NFR baseline document.
+    Nfr {
+        #[arg(long)]
+        id: String,
+        #[arg(long)]
+        title: String,
+        #[arg(long)]
+        owner: Option<String>,
+        #[arg(long)]
+        dir: Option<PathBuf>,
+    },
+    /// Create a new glossary/entities document.
+    Glossary {
+        #[arg(long)]
+        id: String,
+        #[arg(long)]
+        title: String,
+        #[arg(long)]
+        owner: Option<String>,
+        #[arg(long)]
+        dir: Option<PathBuf>,
+    },
+}
+
 #[derive(Debug, Clone, Serialize)]
 struct Finding {
     check_id: String,
@@ -209,6 +334,9 @@ fn main_exit_code() -> i32 {
         Command::Skill(cmd) => run_skill(cmd),
         Command::Template(cmd) => run_asset("template", &EMBED_TEMPLATES, cmd),
         Command::Rubric(cmd) => run_asset("rubric", &EMBED_RUBRICS, cmd),
+        Command::Conformance(cmd) => run_conformance(cmd),
+        Command::Init(cmd) => run_init(cmd),
+        Command::New(cmd) => run_new(cmd),
     }
 }
 
@@ -456,6 +584,429 @@ fn run_skill(cmd: SkillCmd) -> i32 {
             all,
             skill,
         }),
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct ConformanceResult {
+    standard: String,
+    standard_version: String,
+    profile: String,
+    root: String,
+    pass: bool,
+    error_count: usize,
+    warning_count: usize,
+    errors: Vec<Finding>,
+    warnings: Vec<Finding>,
+}
+
+fn run_conformance(cmd: ConformanceCmd) -> i32 {
+    match cmd.subcommand {
+        ConformanceSubcommand::Run {
+            profile,
+            format,
+            docs_dir,
+            examples_dir,
+            root,
+        } => {
+            let check_doc_placeholders = matches!(profile, ConformanceProfile::Strict);
+            let strict = matches!(profile, ConformanceProfile::Strict);
+
+            let (mut errors, mut warnings) = lint_docset(
+                &root,
+                &docs_dir,
+                &examples_dir,
+                check_doc_placeholders,
+                strict,
+            );
+
+            // Ensure conformance results include stable metadata in JSON outputs.
+            let standard = "ARSF".to_string();
+            let standard_version = "0.1.0".to_string();
+
+            // In strict profile, treat all warnings as errors regardless of docset lint behavior.
+            if strict && !warnings.is_empty() {
+                for mut w in warnings.drain(..) {
+                    w.severity = "error".to_string();
+                    errors.push(w);
+                }
+            }
+
+            let result = ConformanceResult {
+                standard,
+                standard_version,
+                profile: match profile {
+                    ConformanceProfile::Core => "core".to_string(),
+                    ConformanceProfile::Strict => "strict".to_string(),
+                },
+                root: canonicalish(&root).to_string_lossy().to_string(),
+                pass: errors.is_empty(),
+                error_count: errors.len(),
+                warning_count: warnings.len(),
+                errors,
+                warnings,
+            };
+
+            match format {
+                OutputFormat::Json => {
+                    let json =
+                        serde_json::to_string_pretty(&result).unwrap_or_else(|_| "{}".to_string());
+                    println!("{json}");
+                }
+                OutputFormat::Text => {
+                    if result.errors.is_empty() && result.warnings.is_empty() {
+                        println!(
+                            "[OK] ARSF conformance passed ({profile}).",
+                            profile = result.profile
+                        );
+                    } else if result.errors.is_empty() {
+                        println!(
+                            "[WARN] ARSF conformance passed with warnings ({profile}).",
+                            profile = result.profile
+                        );
+                        println!("[WARN] Warnings:");
+                        for f in &result.warnings {
+                            println!("- {}: {} ({})", f.check_id, f.message, f.evidence);
+                        }
+                    } else {
+                        println!(
+                            "[FAIL] ARSF conformance failed ({profile}).",
+                            profile = result.profile
+                        );
+                        println!("[FAIL] Errors:");
+                        for f in &result.errors {
+                            println!("- {}: {} ({})", f.check_id, f.message, f.evidence);
+                        }
+                        if !result.warnings.is_empty() {
+                            println!("[WARN] Warnings:");
+                            for f in &result.warnings {
+                                println!("- {}: {} ({})", f.check_id, f.message, f.evidence);
+                            }
+                        }
+                    }
+                }
+                OutputFormat::Github => {
+                    // Reuse lint emitter so findings show as PR annotations.
+                    let lint_result = LintResult {
+                        path: None,
+                        root: Some(result.root.clone()),
+                        pass: result.pass,
+                        error_count: result.error_count,
+                        warning_count: result.warning_count,
+                        errors: result.errors.clone(),
+                        warnings: result.warnings.clone(),
+                        tool_version: env!("CARGO_PKG_VERSION").to_string(),
+                        standard: result.standard.clone(),
+                        standard_version: result.standard_version.clone(),
+                    };
+                    let _ = emit_lint_result(lint_result, OutputFormat::Github);
+                }
+            }
+
+            if result.errors.is_empty() {
+                0
+            } else {
+                1
+            }
+        }
+    }
+}
+
+fn write_file_checked(path: &Path, contents: &str, overwrite: bool) -> Result<(), String> {
+    if path.exists() && !overwrite {
+        return Err(format!(
+            "Refusing to overwrite existing file (use --overwrite): {}",
+            path.display()
+        ));
+    }
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)
+            .map_err(|err| format!("Failed to create directory {}: {err}", parent.display()))?;
+    }
+    fs::write(path, contents).map_err(|err| format!("Failed to write {}: {err}", path.display()))
+}
+
+fn run_init(cmd: InitCmd) -> i32 {
+    let root = canonicalish(&cmd.root);
+    let docs_dir = root.join(&cmd.docs_dir);
+    let examples_dir = root.join(&cmd.examples_dir);
+
+    if let Err(err) = fs::create_dir_all(&docs_dir) {
+        return fail(&format!("Failed to create docs dir {}: {err}", docs_dir.display()));
+    }
+    if let Err(err) = fs::create_dir_all(&examples_dir) {
+        return fail(&format!(
+            "Failed to create examples dir {}: {err}",
+            examples_dir.display()
+        ));
+    }
+
+    // Seed minimal valid docs so the first lint run is meaningful.
+    let seed_glossary = docs_dir.join("glossary.md");
+    let seed_nfr = docs_dir.join("nfr.md");
+    let seed_uc = docs_dir.join("uc-0001.md");
+
+    if let Err(message) = write_file_checked(
+        &seed_glossary,
+        "---\nid: GLOSSARY-0001\ntype: glossary\ntitle: \"Glossary And Entities\"\nowner: \"@owner\"\nlast_updated: YYYY-MM-DD\n---\n\n# Glossary And Entities\n\n## Terms\n| term | definition (one line) | allowed_synonyms | banned_synonyms |\n|------|------------------------|------------------|-----------------|\n| Widget | A sellable item. | - | - |\n\n## Entities\n| entity | description (one line) | identifier | source_of_truth |\n|--------|--------------------------|------------|-----------------|\n| Widget | Represents a widget record. | widget_id | Widget DB |\n",
+        cmd.overwrite,
+    ) {
+        return fail(&message);
+    }
+    if let Err(message) = write_file_checked(
+        &seed_nfr,
+        "---\nid: NFR-0001\ntype: nfr\ntitle: \"NFR Baseline\"\nowner: \"@owner\"\nlast_updated: YYYY-MM-DD\n---\n\n# NFR Baseline\n\n## Risk Tiers (Doc Gates)\n| tier | triggers (if any apply) | required_docs | required_uc_fields | required_reviews |\n|------|--------------------------|---------------|--------------------|------------------|\n| tier1 | internal state write | UC required; NFR baseline applies | interface contract | 1 reviewer |\n",
+        cmd.overwrite,
+    ) {
+        return fail(&message);
+    }
+    if let Err(message) = write_file_checked(
+        &seed_uc,
+        "---\nid: UC-0001\ntype: use_case\ntitle: \"Create Widget\"\nstatus: draft\nowner: \"@owner\"\nrisk_tier: tier1\nsystem: \"\"\nlinks:\n  glossary: \"./glossary.md\"\n  nfr: \"./nfr.md\"\ncode_refs:\n  implementation: \"\"\n  tests: \"\"\n---\n\n# UC-0001: Create Widget\n\n## Entities (Referenced)\n| entity | identifier | notes |\n|--------|------------|-------|\n| Widget | widget_id | Scoped |\n",
+        cmd.overwrite,
+    ) {
+        return fail(&message);
+    }
+
+    // Seed examples that are placeholder-free, so strict conformance can be used as a default CI gate.
+    let ex_glossary = examples_dir.join("glossary-example.md");
+    let ex_nfr = examples_dir.join("nfr-example.md");
+    let ex_uc = examples_dir.join("uc-example.md");
+
+    if let Err(message) = write_file_checked(
+        &ex_glossary,
+        "---\nid: GLOSSARY-9001\ntype: glossary\ntitle: \"Glossary And Entities (Example)\"\nowner: \"@example\"\nlast_updated: 2026-02-17\n---\n\n# Glossary And Entities (Example)\n\n## Terms\n| term | definition (one line) | allowed_synonyms | banned_synonyms |\n|------|------------------------|------------------|-----------------|\n| Widget | A sellable item managed by the system. | - | Item |\n\n## Entities\n| entity | description (one line) | identifier | source_of_truth |\n|--------|--------------------------|------------|-----------------|\n| Widget | Represents a widget record. | widget_id | Widget DB |\n",
+        cmd.overwrite,
+    ) {
+        return fail(&message);
+    }
+    if let Err(message) = write_file_checked(
+        &ex_nfr,
+        "---\nid: NFR-9001\ntype: nfr\ntitle: \"NFR Baseline (Example)\"\nowner: \"@example\"\nlast_updated: 2026-02-17\n---\n\n# NFR Baseline: Example\n\n## Risk Tiers (Doc Gates)\n| tier | triggers (if any apply) | required_docs | required_uc_fields | required_reviews |\n|------|--------------------------|---------------|--------------------|------------------|\n| tier1 | internal state write | UC required; NFR baseline applies | interface contract | 1 reviewer |\n",
+        cmd.overwrite,
+    ) {
+        return fail(&message);
+    }
+    if let Err(message) = write_file_checked(
+        &ex_uc,
+        "---\nid: UC-9001\ntype: use_case\ntitle: \"Create Widget (Example)\"\nstatus: ready\nowner: \"@example\"\nrisk_tier: tier1\nsystem: \"Widget Service\"\nlinks:\n  glossary: \"./glossary-example.md\"\n  nfr: \"./nfr-example.md\"\ncode_refs:\n  implementation: \"\"\n  tests: \"\"\n---\n\n# UC-9001: Create Widget (Example)\n\n## Entities (Referenced)\n| entity | identifier | notes |\n|--------|------------|-------|\n| Widget | widget_id | Scoped |\n",
+        cmd.overwrite,
+    ) {
+        return fail(&message);
+    }
+
+    if cmd.workflow {
+        let ard_version = cmd
+            .ard_version
+            .unwrap_or_else(|| format!("v{}", env!("CARGO_PKG_VERSION")));
+        let workflow_path = PathBuf::from(".github/workflows/arsf.yml");
+        let workflow = format!(
+            "name: arsf\n\non:\n  pull_request:\n  push:\n    branches: [main]\n\njobs:\n  lint:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n\n      - name: Install ard\n        run: |\n          curl -fsSL -o install-ard.sh https://raw.githubusercontent.com/AgentReadyDocs/spec-kit/main/scripts/install_ard.sh\n          sh install-ard.sh --version {ard_version} --to ./bin\n          echo \"$PWD/bin\" >> \"$GITHUB_PATH\"\n\n      - name: Lint ARSF docset\n        run: |\n          ard lint --format github ./AGENTS.md\n          ard conformance run --format github --profile strict {root}\n",
+            ard_version = ard_version,
+            root = root.to_string_lossy()
+        );
+        if let Err(message) = write_file_checked(&workflow_path, &workflow, cmd.overwrite) {
+            return fail(&message);
+        }
+    }
+
+    println!(
+        "[OK] Initialized ARSF docset at {} (docs: {}, examples: {}).",
+        root.display(),
+        docs_dir.display(),
+        examples_dir.display()
+    );
+    0
+}
+
+fn infer_default_docs_dir() -> Option<PathBuf> {
+    let candidates = [PathBuf::from("spec/docs"), PathBuf::from("docs")];
+    for c in candidates {
+        if c.is_dir() {
+            return Some(c);
+        }
+    }
+    None
+}
+
+fn kebab_slug(s: &str) -> String {
+    let mut out = String::new();
+    let mut prev_dash = false;
+    for ch in s.chars() {
+        let is_ok = ch.is_ascii_alphanumeric();
+        if is_ok {
+            out.push(ch.to_ascii_lowercase());
+            prev_dash = false;
+        } else if !prev_dash {
+            out.push('-');
+            prev_dash = true;
+        }
+    }
+    while out.ends_with('-') {
+        out.pop();
+    }
+    while out.starts_with('-') {
+        out.remove(0);
+    }
+    if out.is_empty() {
+        "doc".to_string()
+    } else {
+        out
+    }
+}
+
+fn run_new(cmd: NewCmd) -> i32 {
+    match cmd.subcommand {
+        NewSubcommand::UseCase {
+            id,
+            title,
+            owner,
+            risk_tier,
+            glossary,
+            nfr,
+            dir,
+        } => {
+            let dir = match dir.or_else(infer_default_docs_dir) {
+                Some(d) => d,
+                None => {
+                    return fail(
+                        "Could not infer docs directory. Pass --dir <path> (expected ./spec/docs or ./docs).",
+                    )
+                }
+            };
+            if !dir.is_dir() {
+                return fail(&format!(
+                    "Docs directory does not exist: {} (pass --dir <path>)",
+                    dir.display()
+                ));
+            }
+            let slug = kebab_slug(&title);
+            let file = dir.join(format!("{}-{slug}.md", id.to_lowercase()));
+            let owner = owner.unwrap_or_else(|| "@owner".to_string());
+            let content = format!(
+                "---\nid: {id}\ntype: use_case\ntitle: \"{title}\"\nstatus: draft\nowner: \"{owner}\"\nrisk_tier: {risk_tier}\nsystem: \"\"\nlinks:\n  glossary: \"{glossary}\"\n  nfr: \"{nfr}\"\ncode_refs:\n  implementation: \"\"\n  tests: \"\"\n---\n\n# {id}: {title}\n",
+                id = id,
+                title = title,
+                owner = owner,
+                risk_tier = risk_tier,
+                glossary = glossary,
+                nfr = nfr
+            );
+            if let Err(message) = write_file_checked(&file, &content, false) {
+                return fail(&message);
+            }
+            println!("[OK] Wrote {}", file.display());
+            0
+        }
+        NewSubcommand::Adr {
+            id,
+            title,
+            owner,
+            risk_tier,
+            nfr,
+            dir,
+        } => {
+            let dir = match dir.or_else(infer_default_docs_dir) {
+                Some(d) => d,
+                None => {
+                    return fail(
+                        "Could not infer docs directory. Pass --dir <path> (expected ./spec/docs or ./docs).",
+                    )
+                }
+            };
+            if !dir.is_dir() {
+                return fail(&format!(
+                    "Docs directory does not exist: {} (pass --dir <path>)",
+                    dir.display()
+                ));
+            }
+            let slug = kebab_slug(&title);
+            let file = dir.join(format!("{}-{slug}.md", id.to_lowercase()));
+            let owner = owner.unwrap_or_else(|| "@owner".to_string());
+            let content = format!(
+                "---\nid: {id}\ntitle: \"{title}\"\nstatus: proposed\ndate: YYYY-MM-DD\nowner: \"{owner}\"\nrisk_tier: {risk_tier}\nscope:\n  components: []\n  domains: []\nlinks:\n  use_cases: []\n  nfr: \"{nfr}\"\nsupersedes: []\nsuperseded_by: []\n---\n\n# {id}: {title}\n",
+                id = id,
+                title = title,
+                owner = owner,
+                risk_tier = risk_tier,
+                nfr = nfr
+            );
+            if let Err(message) = write_file_checked(&file, &content, false) {
+                return fail(&message);
+            }
+            println!("[OK] Wrote {}", file.display());
+            0
+        }
+        NewSubcommand::Nfr {
+            id,
+            title,
+            owner,
+            dir,
+        } => {
+            let dir = match dir.or_else(infer_default_docs_dir) {
+                Some(d) => d,
+                None => {
+                    return fail(
+                        "Could not infer docs directory. Pass --dir <path> (expected ./spec/docs or ./docs).",
+                    )
+                }
+            };
+            if !dir.is_dir() {
+                return fail(&format!(
+                    "Docs directory does not exist: {} (pass --dir <path>)",
+                    dir.display()
+                ));
+            }
+            let slug = kebab_slug(&title);
+            let file = dir.join(format!("{}-{slug}.md", id.to_lowercase()));
+            let owner = owner.unwrap_or_else(|| "@owner".to_string());
+            let content = format!(
+                "---\nid: {id}\ntype: nfr\ntitle: \"{title}\"\nowner: \"{owner}\"\nlast_updated: YYYY-MM-DD\n---\n\n# NFR Baseline: {title}\n",
+                id = id,
+                title = title,
+                owner = owner
+            );
+            if let Err(message) = write_file_checked(&file, &content, false) {
+                return fail(&message);
+            }
+            println!("[OK] Wrote {}", file.display());
+            0
+        }
+        NewSubcommand::Glossary {
+            id,
+            title,
+            owner,
+            dir,
+        } => {
+            let dir = match dir.or_else(infer_default_docs_dir) {
+                Some(d) => d,
+                None => {
+                    return fail(
+                        "Could not infer docs directory. Pass --dir <path> (expected ./spec/docs or ./docs).",
+                    )
+                }
+            };
+            if !dir.is_dir() {
+                return fail(&format!(
+                    "Docs directory does not exist: {} (pass --dir <path>)",
+                    dir.display()
+                ));
+            }
+            let slug = kebab_slug(&title);
+            let file = dir.join(format!("{}-{slug}.md", id.to_lowercase()));
+            let owner = owner.unwrap_or_else(|| "@owner".to_string());
+            let content = format!(
+                "---\nid: {id}\ntype: glossary\ntitle: \"{title}\"\nowner: \"{owner}\"\nlast_updated: YYYY-MM-DD\n---\n\n# {title}\n",
+                id = id,
+                title = title,
+                owner = owner
+            );
+            if let Err(message) = write_file_checked(&file, &content, false) {
+                return fail(&message);
+            }
+            println!("[OK] Wrote {}", file.display());
+            0
+        }
     }
 }
 
@@ -2656,6 +3207,44 @@ mod tests {
     }
 
     #[test]
+    fn docset_linter_reports_unresolvable_links_and_entity_mismatch() {
+        let tmp = TempDir::new().unwrap();
+        write(
+            &tmp.path().join("docs/glossary.md"),
+            "---\nid: GLOSSARY-001\ntype: glossary\n---\n\n# Glossary\n\n## Terms\n| term | definition (one line) | allowed_synonyms | banned_synonyms |\n|------|------------------------|------------------|-----------------|\n| Widget | A widget. | - | - |\n\n## Entities\n| entity | description (one line) | identifier | source_of_truth |\n|--------|--------------------------|------------|-----------------|\n| Widget | A widget record. | widget_id | DB |\n",
+        );
+        write(
+            &tmp.path().join("docs/uc.md"),
+            "---\nid: UC-0001\ntype: use_case\nlinks:\n  glossary: \"./glossary.md\"\n  nfr: \"./missing-nfr.md\"\n---\n\n# UC-0001: Test\n\n## Entities (Referenced)\n| entity | identifier | notes |\n|--------|------------|-------|\n| Gadget | gadget_id | Not in glossary |\n",
+        );
+
+        let (errors, _warnings) = lint_docset(tmp.path(), "docs", "examples", false, false);
+        assert!(
+            errors.iter().any(|f| f.check_id == "DS-CF-002"),
+            "{errors:?}"
+        );
+        assert!(
+            errors.iter().any(|f| f.check_id == "DS-CF-003"),
+            "{errors:?}"
+        );
+    }
+
+    #[test]
+    fn docset_linter_warns_when_examples_dir_has_no_examples() {
+        let tmp = TempDir::new().unwrap();
+        fs::create_dir_all(tmp.path().join("examples")).unwrap();
+        write(
+            &tmp.path().join("docs/uc.md"),
+            "---\nid: UC-0001\ntype: use_case\nlinks:\n  glossary: N/A\n  nfr: N/A\n---\n\n# UC-0001: Title\n",
+        );
+        let (_errors, warnings) = lint_docset(tmp.path(), "docs", "examples", false, false);
+        assert!(
+            warnings.iter().any(|f| f.check_id == "DS-S-007"),
+            "{warnings:?}"
+        );
+    }
+
+    #[test]
     fn docset_linter_requires_adr_for_decisionful_tier2_uc() {
         let tmp = TempDir::new().unwrap();
         write(
@@ -3231,6 +3820,49 @@ mod tests {
             ..Default::default()
         };
         emit_github_annotations(&result);
+    }
+
+    #[test]
+    fn kebab_slug_trims_and_defaults() {
+        assert_eq!(kebab_slug("Hello, world!"), "hello-world");
+        assert_eq!(kebab_slug("---A---"), "a");
+        assert_eq!(kebab_slug("   "), "doc");
+    }
+
+    #[test]
+    fn write_file_checked_creates_parents_and_respects_overwrite() {
+        let tmp = TempDir::new().unwrap();
+        let path = tmp.path().join("a/b/c.txt");
+
+        write_file_checked(&path, "one", false).unwrap();
+        assert_eq!(fs::read_to_string(&path).unwrap(), "one");
+
+        let err = write_file_checked(&path, "two", false).unwrap_err();
+        assert!(err.contains("Refusing to overwrite"));
+
+        write_file_checked(&path, "two", true).unwrap();
+        assert_eq!(fs::read_to_string(&path).unwrap(), "two");
+    }
+
+    #[test]
+    fn infer_default_docs_dir_prefers_spec_docs_then_docs() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let cwd = env::current_dir().unwrap();
+        let tmp = TempDir::new().unwrap();
+
+        let spec_docs = tmp.path().join("spec/docs");
+        fs::create_dir_all(&spec_docs).unwrap();
+        env::set_current_dir(tmp.path()).unwrap();
+        assert_eq!(
+            infer_default_docs_dir().unwrap(),
+            PathBuf::from("spec/docs")
+        );
+
+        fs::remove_dir_all(tmp.path().join("spec")).unwrap();
+        fs::create_dir_all(tmp.path().join("docs")).unwrap();
+        assert_eq!(infer_default_docs_dir().unwrap(), PathBuf::from("docs"));
+
+        env::set_current_dir(cwd).unwrap();
     }
 
     #[test]

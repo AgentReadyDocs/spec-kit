@@ -92,6 +92,12 @@ jobs:
 - `ard lint <skill-dir>`: basic skill contract shape (expects `SKILL.md` and consistent contents).
 - `ard lint .` (docset): frontmatter presence/uniqueness, internal markdown link resolution, required cross-doc links (for example use case `links.glossary` / `links.nfr`), and deterministic docset consistency gates (for example tier2+ decisionful use cases must be linked from an ADR).
 
+## Conformance and Scaffolding
+
+- Conformance gate: `ard conformance run --profile core|strict <root>`
+- Initialize a docset: `ard init --workflow`
+- Create docs: `ard new use-case ...`, `ard new adr ...`, `ard new nfr ...`, `ard new glossary ...`
+
 ## Start here
 
 - Templates:

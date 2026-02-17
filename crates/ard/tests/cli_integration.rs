@@ -11,6 +11,14 @@ fn run_ard(args: &[&str]) -> std::process::Output {
         .expect("failed to run ard")
 }
 
+fn run_ard_in(dir: &Path, args: &[&str]) -> std::process::Output {
+    Command::new(env!("CARGO_BIN_EXE_ard"))
+        .current_dir(dir)
+        .args(args)
+        .output()
+        .expect("failed to run ard")
+}
+
 fn write(path: &Path, text: &str) {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).expect("create parent");
@@ -235,4 +243,231 @@ fn lint_github_format_emits_workflow_annotations() {
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("::error"), "{stdout}");
     assert!(stdout.contains("title=DS-ID-001"), "{stdout}");
+}
+
+#[test]
+fn conformance_vectors_core_and_strict_behave_as_expected() {
+    let repo_root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+
+    let core_valid = repo_root.join("schemas/arsf/0.1.0/vectors/core/valid_minimal");
+    let core_ok = run_ard(&[
+        "conformance",
+        "run",
+        "--profile",
+        "core",
+        &core_valid.to_string_lossy(),
+    ]);
+    assert!(core_ok.status.success());
+
+    let core_invalid = repo_root.join("schemas/arsf/0.1.0/vectors/core/invalid_missing_id");
+    let core_bad = run_ard(&[
+        "conformance",
+        "run",
+        "--profile",
+        "core",
+        &core_invalid.to_string_lossy(),
+    ]);
+    assert!(!core_bad.status.success());
+    let stdout = String::from_utf8_lossy(&core_bad.stdout);
+    assert!(stdout.contains("DS-ID-001"), "{stdout}");
+
+    let strict_invalid = repo_root.join("schemas/arsf/0.1.0/vectors/strict/invalid_h1_mismatch");
+    let strict_bad = run_ard(&[
+        "conformance",
+        "run",
+        "--profile",
+        "strict",
+        &strict_invalid.to_string_lossy(),
+    ]);
+    assert!(!strict_bad.status.success());
+    let stdout = String::from_utf8_lossy(&strict_bad.stdout);
+    assert!(stdout.contains("DS-S-002"), "{stdout}");
+}
+
+#[test]
+fn init_creates_strict_conformant_docset_in_temp_dir() {
+    let tmp = TempDir::new().expect("tempdir");
+    let spec_root = Path::new("spec");
+
+    // Run in the tempdir so generated workflow/files never touch the repo checkout.
+    let init = run_ard_in(tmp.path(), &[
+        "init",
+        "--root",
+        &spec_root.to_string_lossy(),
+        "--workflow",
+        "--overwrite",
+    ]);
+    assert!(init.status.success());
+
+    let conf = run_ard_in(tmp.path(), &[
+        "conformance",
+        "run",
+        "--profile",
+        "strict",
+        &spec_root.to_string_lossy(),
+    ]);
+    assert!(conf.status.success());
+}
+
+#[test]
+fn new_subcommands_write_docs_and_handle_missing_dir_inference() {
+    let tmp = TempDir::new().expect("tempdir");
+    let root = tmp.path().join("spec");
+    let docs = root.join("docs");
+    fs::create_dir_all(&docs).expect("create docs");
+
+    // Without --dir and without a default docs dir in the CWD, `new` should fail.
+    let fail_infer = run_ard(&["new", "use-case", "--id", "UC-0002", "--title", "X"]);
+    assert!(!fail_infer.status.success());
+
+    let out_uc = run_ard(&[
+        "new",
+        "use-case",
+        "--id",
+        "UC-0002",
+        "--title",
+        "My Use Case",
+        "--dir",
+        &docs.to_string_lossy(),
+    ]);
+    assert!(out_uc.status.success());
+
+    let out_adr = run_ard(&[
+        "new",
+        "adr",
+        "--id",
+        "ADR-0001",
+        "--title",
+        "My ADR",
+        "--dir",
+        &docs.to_string_lossy(),
+    ]);
+    assert!(out_adr.status.success());
+
+    let out_nfr = run_ard(&[
+        "new",
+        "nfr",
+        "--id",
+        "NFR-0002",
+        "--title",
+        "NFR Baseline",
+        "--dir",
+        &docs.to_string_lossy(),
+    ]);
+    assert!(out_nfr.status.success());
+
+    let out_glossary = run_ard(&[
+        "new",
+        "glossary",
+        "--id",
+        "GLOSSARY-0002",
+        "--title",
+        "Glossary And Entities",
+        "--dir",
+        &docs.to_string_lossy(),
+    ]);
+    assert!(out_glossary.status.success());
+
+    // Conformance core should succeed (may warn about missing examples, which is OK for core).
+    let conf = run_ard(&[
+        "conformance",
+        "run",
+        "--profile",
+        "core",
+        &root.to_string_lossy(),
+    ]);
+    assert!(conf.status.success());
+
+    // Conformance JSON output should include standard metadata.
+    let conf_json = run_ard(&[
+        "conformance",
+        "run",
+        "--profile",
+        "core",
+        "--format",
+        "json",
+        &root.to_string_lossy(),
+    ]);
+    assert!(conf_json.status.success());
+    let stdout = String::from_utf8_lossy(&conf_json.stdout);
+    assert!(stdout.contains("\"standard\""));
+    assert!(stdout.contains("\"ARSF\""));
+}
+
+#[test]
+fn init_respects_overwrite_flag() {
+    let tmp = TempDir::new().expect("tempdir");
+    let spec_root = tmp.path().join("spec");
+
+    let first = run_ard(&["init", "--root", &spec_root.to_string_lossy()]);
+    assert!(first.status.success());
+
+    // Re-running without --overwrite should fail due to existing seeded files.
+    let second = run_ard(&["init", "--root", &spec_root.to_string_lossy()]);
+    assert!(!second.status.success());
+}
+
+#[test]
+fn new_infers_spec_docs_dir_and_refuses_overwrite() {
+    let tmp = TempDir::new().expect("tempdir");
+    let spec_docs = tmp.path().join("spec/docs");
+    fs::create_dir_all(&spec_docs).expect("create spec/docs");
+
+    let first = run_ard_in(
+        tmp.path(),
+        &["new", "use-case", "--id", "UC-0003", "--title", "Infer Dir"],
+    );
+    assert!(first.status.success());
+
+    // Running again should attempt to write the same file and fail without an overwrite flag.
+    let second = run_ard_in(
+        tmp.path(),
+        &["new", "use-case", "--id", "UC-0003", "--title", "Infer Dir"],
+    );
+    assert!(!second.status.success());
+
+    let adr = run_ard_in(
+        tmp.path(),
+        &["new", "adr", "--id", "ADR-0002", "--title", "Infer ADR"],
+    );
+    assert!(adr.status.success());
+
+    let nfr = run_ard_in(
+        tmp.path(),
+        &["new", "nfr", "--id", "NFR-0003", "--title", "Infer NFR"],
+    );
+    assert!(nfr.status.success());
+
+    let glossary = run_ard_in(
+        tmp.path(),
+        &[
+            "new",
+            "glossary",
+            "--id",
+            "GLOSSARY-0003",
+            "--title",
+            "Infer Glossary",
+        ],
+    );
+    assert!(glossary.status.success());
+}
+
+#[test]
+fn conformance_github_format_emits_annotations() {
+    let repo_root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let core_invalid = repo_root.join("schemas/arsf/0.1.0/vectors/core/invalid_missing_id");
+
+    let out = run_ard(&[
+        "conformance",
+        "run",
+        "--profile",
+        "core",
+        "--format",
+        "github",
+        &core_invalid.to_string_lossy(),
+    ]);
+    assert!(!out.status.success());
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("::error"), "{stdout}");
+    assert!(stdout.contains("DS-ID-001"), "{stdout}");
 }

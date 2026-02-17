@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentreadydocs.org/schemas/arsf/0.1.0/use_case.schema.json",
+  "title": "ARSF Use Case (Frontmatter)",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["id", "type", "links"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^UC-[0-9]{4}$" },
+    "type": { "const": "use_case" },
+    "title": { "type": "string" },
+    "status": { "type": "string" },
+    "owner": { "type": "string" },
+    "risk_tier": { "type": "string", "enum": ["tier0", "tier1", "tier2", "tier3"] },
+    "system": { "type": "string" },
+    "links": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["glossary", "nfr"],
+      "properties": {
+        "glossary": { "type": "string" },
+        "nfr": { "type": "string" }
+      }
+    }
+  }
+}
+

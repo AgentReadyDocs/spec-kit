@@ -26,10 +26,9 @@ The reference validator is `ard`. Recommended CI usage:
 
 ```bash
 ard lint --strict --format github ./AGENTS.md
-ard lint --strict --format github .
+ard conformance run --format github --profile strict .
 ```
 
 ## Stable Check IDs
 
 Validators MUST report stable check IDs for failures so teams can gate on behavior without brittle parsing.
-

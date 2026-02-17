@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentreadydocs.org/schemas/arsf/0.1.0/adr.schema.json",
+  "title": "ARSF ADR (Frontmatter)",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["id"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^ADR-[0-9]{4}$" },
+    "title": { "type": "string" },
+    "status": { "type": "string" },
+    "date": { "type": "string" },
+    "owner": { "type": "string" },
+    "risk_tier": { "type": "string", "enum": ["tier0", "tier1", "tier2", "tier3"] },
+    "scope": { "type": "object" },
+    "links": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "use_cases": { "type": "array", "items": { "type": "string" } },
+        "nfr": { "type": "string" }
+      }
+    }
+  }
+}
+

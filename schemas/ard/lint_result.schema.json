@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentreadydocs.org/schemas/ard/lint_result.schema.json",
+  "title": "ard LintResult",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["pass", "error_count", "warning_count", "errors", "warnings", "tool_version", "standard", "standard_version"],
+  "properties": {
+    "path": { "type": ["string", "null"] },
+    "root": { "type": ["string", "null"] },
+    "pass": { "type": "boolean" },
+    "error_count": { "type": "integer", "minimum": 0 },
+    "warning_count": { "type": "integer", "minimum": 0 },
+    "tool_version": { "type": "string" },
+    "standard": { "type": "string" },
+    "standard_version": { "type": "string" },
+    "errors": { "$ref": "#/$defs/findings" },
+    "warnings": { "$ref": "#/$defs/findings" }
+  },
+  "$defs": {
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["check_id", "severity", "message", "evidence"],
+      "properties": {
+        "check_id": { "type": "string" },
+        "severity": { "type": "string", "enum": ["error", "warning"] },
+        "message": { "type": "string" },
+        "evidence": { "type": "string" },
+        "path": { "type": ["string", "null"] },
+        "line": { "type": ["integer", "null"], "minimum": 1 },
+        "col": { "type": ["integer", "null"], "minimum": 1 },
+        "doc_id": { "type": ["string", "null"] }
+      }
+    }
+  }
+}
+

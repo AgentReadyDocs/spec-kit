@@ -42,3 +42,10 @@ Copy/paste workflow:
 
 - `docs/arsf/workflows/github-actions.yml`
 
+## Schemas and Vectors
+
+This repo includes machine-consumable artifacts to help other tools implement ARSF validators:
+
+- ARSF JSON Schemas (frontmatter shape): `schemas/arsf/0.1.0/`
+- `ard` output schema: `schemas/ard/lint_result.schema.json`
+- Conformance vectors (mini docsets): `schemas/arsf/0.1.0/vectors/`

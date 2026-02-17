@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentreadydocs.org/schemas/arsf/0.1.0/nfr.schema.json",
+  "title": "ARSF NFR Baseline (Frontmatter)",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["id", "type"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^NFR-[0-9]{4}$" },
+    "type": { "const": "nfr" },
+    "title": { "type": "string" },
+    "owner": { "type": "string" },
+    "last_updated": { "type": "string" }
+  }
+}
+

@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentreadydocs.org/schemas/arsf/0.1.0/glossary.schema.json",
+  "title": "ARSF Glossary/Entities (Frontmatter)",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["id", "type"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "type": { "const": "glossary" },
+    "title": { "type": "string" },
+    "owner": { "type": "string" },
+    "last_updated": { "type": "string" }
+  }
+}
+
