@@ -1,4 +1,4 @@
-name: ard
+name: arsf
 
 on:
   pull_request:
@@ -17,7 +17,8 @@ jobs:
           sh install-ard.sh --version v0.1.0 --to ./bin
           echo "$PWD/bin" >> "$GITHUB_PATH"
 
-      - name: Lint agent instructions and specs
+      - name: Lint ARSF docset
         run: |
           ard lint --format github ./AGENTS.md
           ard lint --format github .
+

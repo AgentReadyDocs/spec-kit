@@ -219,3 +219,20 @@ fn lint_auto_agents_and_docset_dir_and_unsupported_file() {
     let lint_txt = run_ard(&["lint", &tmp.path().join("not-md.txt").to_string_lossy()]);
     assert!(!lint_txt.status.success());
 }
+
+#[test]
+fn lint_github_format_emits_workflow_annotations() {
+    let tmp = TempDir::new().expect("tempdir");
+    let root = tmp.path().join("docset");
+    // Missing frontmatter id triggers DS-ID-001.
+    write(
+        &root.join("docs/bad.md"),
+        "---\ntype: use_case\nlinks:\n  glossary: N/A\n  nfr: N/A\n---\n\n# UC-0001: Title\n",
+    );
+
+    let output = run_ard(&["lint", "--format", "github", &root.to_string_lossy()]);
+    assert!(!output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("::error"), "{stdout}");
+    assert!(stdout.contains("title=DS-ID-001"), "{stdout}");
+}

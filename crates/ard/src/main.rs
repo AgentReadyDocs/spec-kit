@@ -19,6 +19,7 @@ static EMBED_RUBRICS: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/../../rubrics"
 enum OutputFormat {
     Text,
     Json,
+    Github,
 }
 
 #[derive(Debug, Clone, Copy, ValueEnum)]
@@ -141,6 +142,29 @@ struct Finding {
     severity: String, // "error" | "warning"
     message: String,
     evidence: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    path: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    line: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    col: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    doc_id: Option<String>,
+}
+
+impl Default for Finding {
+    fn default() -> Self {
+        Self {
+            check_id: String::new(),
+            severity: String::new(),
+            message: String::new(),
+            evidence: String::new(),
+            path: None,
+            line: None,
+            col: None,
+            doc_id: None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -152,6 +176,26 @@ struct LintResult {
     warning_count: usize,
     errors: Vec<Finding>,
     warnings: Vec<Finding>,
+    tool_version: String,
+    standard: String,
+    standard_version: String,
+}
+
+impl Default for LintResult {
+    fn default() -> Self {
+        Self {
+            path: None,
+            root: None,
+            pass: false,
+            error_count: 0,
+            warning_count: 0,
+            errors: Vec::new(),
+            warnings: Vec::new(),
+            tool_version: String::new(),
+            standard: String::new(),
+            standard_version: String::new(),
+        }
+    }
 }
 
 fn main() {
@@ -428,6 +472,7 @@ fn run_lint(cmd: LintCmd) -> i32 {
                     warning_count: warnings.len(),
                     errors,
                     warnings,
+                    ..Default::default()
                 },
                 cmd.format,
             )
@@ -446,6 +491,7 @@ fn run_lint(cmd: LintCmd) -> i32 {
                     warning_count: warnings.len(),
                     errors,
                     warnings,
+                    ..Default::default()
                 },
                 cmd.format,
             )
@@ -472,6 +518,7 @@ fn run_lint(cmd: LintCmd) -> i32 {
                     warning_count: warnings.len(),
                     errors,
                     warnings,
+                    ..Default::default()
                 },
                 cmd.format,
             )
@@ -542,6 +589,7 @@ fn lint_auto(
                     warning_count: warnings.len(),
                     errors,
                     warnings,
+                    ..Default::default()
                 },
                 format,
             )
@@ -557,6 +605,7 @@ fn lint_auto(
                     warning_count: warnings.len(),
                     errors,
                     warnings,
+                    ..Default::default()
                 },
                 format,
             )
@@ -572,6 +621,7 @@ fn lint_auto(
                     warning_count: warnings.len(),
                     errors,
                     warnings,
+                    ..Default::default()
                 },
                 format,
             )
@@ -587,6 +637,7 @@ fn lint_auto(
                     warning_count: warnings.len(),
                     errors,
                     warnings,
+                    ..Default::default()
                 },
                 format,
             )
@@ -711,7 +762,18 @@ fn write_embedded_subdir(dir: &Dir<'_>, dest: &Path) -> io::Result<()> {
     Ok(())
 }
 
-fn emit_lint_result(result: LintResult, format: OutputFormat) -> i32 {
+fn emit_lint_result(mut result: LintResult, format: OutputFormat) -> i32 {
+    if result.tool_version.is_empty() {
+        result.tool_version = env!("CARGO_PKG_VERSION").to_string();
+    }
+    if result.standard.is_empty() {
+        result.standard = "ARSF".to_string();
+    }
+    if result.standard_version.is_empty() {
+        // Standard versioning is introduced via docs; keep tool output stable while iterating.
+        result.standard_version = "0.1.0".to_string();
+    }
+
     match format {
         OutputFormat::Json => {
             let json = serde_json::to_string_pretty(&result).unwrap_or_else(|_| "{}".to_string());
@@ -735,6 +797,10 @@ fn emit_lint_result(result: LintResult, format: OutputFormat) -> i32 {
                 }
             }
         }
+        OutputFormat::Github => {
+            emit_github_annotations(&result);
+            emit_github_step_summary(&result);
+        }
     }
     if result.errors.is_empty() {
         0
@@ -746,6 +812,102 @@ fn emit_lint_result(result: LintResult, format: OutputFormat) -> i32 {
 fn fail(message: &str) -> i32 {
     let _ = writeln!(io::stderr(), "[FAIL] {message}");
     1
+}
+
+fn gh_escape_data(s: &str) -> String {
+    s.replace('%', "%25").replace('\r', "%0D").replace('\n', "%0A")
+}
+
+fn gh_escape_property(s: &str) -> String {
+    s.replace('%', "%25")
+        .replace('\r', "%0D")
+        .replace('\n', "%0A")
+        .replace(':', "%3A")
+        .replace(',', "%2C")
+}
+
+fn emit_github_annotations(result: &LintResult) {
+    for f in &result.errors {
+        emit_github_annotation("error", f);
+    }
+    for f in &result.warnings {
+        emit_github_annotation("warning", f);
+    }
+}
+
+fn best_effort_path(f: &Finding) -> Option<String> {
+    if let Some(p) = &f.path {
+        return Some(p.clone());
+    }
+    let candidate = f.evidence.trim();
+    if candidate.is_empty() {
+        return None;
+    }
+    if Path::new(candidate).exists() {
+        return Some(candidate.to_string());
+    }
+    None
+}
+
+fn emit_github_annotation(level: &str, f: &Finding) {
+    let mut props: Vec<String> = Vec::new();
+    if let Some(path) = best_effort_path(f) {
+        props.push(format!("file={}", gh_escape_property(&path)));
+    }
+    if let Some(line) = f.line {
+        props.push(format!("line={line}"));
+    }
+    if let Some(col) = f.col {
+        props.push(format!("col={col}"));
+    }
+    props.push(format!("title={}", gh_escape_property(&f.check_id)));
+
+    let props_str = if props.is_empty() {
+        String::new()
+    } else {
+        format!(" {}", props.join(","))
+    };
+    let body = gh_escape_data(&format!("{} ({})", f.message, f.evidence));
+    println!("::{level}{props_str}::{body}");
+}
+
+fn emit_github_step_summary(result: &LintResult) {
+    let Some(path) = env::var("GITHUB_STEP_SUMMARY").ok() else {
+        return;
+    };
+    let mut out = String::new();
+    out.push_str("# ard lint\n\n");
+    out.push_str(&format!(
+        "- pass: `{}`\n- errors: `{}`\n- warnings: `{}`\n",
+        result.pass, result.error_count, result.warning_count
+    ));
+    out.push_str(&format!(
+        "- tool_version: `{}`\n- standard: `{}`\n- standard_version: `{}`\n\n",
+        result.tool_version, result.standard, result.standard_version
+    ));
+
+    if !result.errors.is_empty() {
+        out.push_str("## Errors\n");
+        for f in result.errors.iter().take(20) {
+            out.push_str(&format!("- `{}`: {} (`{}`)\n", f.check_id, f.message, f.evidence));
+        }
+        if result.errors.len() > 20 {
+            out.push_str(&format!("- … and {} more\n", result.errors.len() - 20));
+        }
+        out.push('\n');
+    }
+    if !result.warnings.is_empty() {
+        out.push_str("## Warnings\n");
+        for f in result.warnings.iter().take(20) {
+            out.push_str(&format!("- `{}`: {} (`{}`)\n", f.check_id, f.message, f.evidence));
+        }
+        if result.warnings.len() > 20 {
+            out.push_str(&format!("- … and {} more\n", result.warnings.len() - 20));
+        }
+        out.push('\n');
+    }
+
+    let _ = fs::write(path, out);
 }
 
 // ---- agents-md linter ----
@@ -849,6 +1011,7 @@ fn lint_agents_md(path: &Path, strict: bool) -> (Vec<Finding>, Vec<Finding>) {
             severity: "error".to_string(),
             message: "AGENTS.md file does not exist.".to_string(),
             evidence: path.display().to_string(),
+            ..Default::default()
         });
         return (errors, warnings);
     }
@@ -858,6 +1021,7 @@ fn lint_agents_md(path: &Path, strict: bool) -> (Vec<Finding>, Vec<Finding>) {
             severity: "error".to_string(),
             message: "AGENTS.md path is not a file.".to_string(),
             evidence: path.display().to_string(),
+            ..Default::default()
         });
         return (errors, warnings);
     }
@@ -870,6 +1034,7 @@ fn lint_agents_md(path: &Path, strict: bool) -> (Vec<Finding>, Vec<Finding>) {
                 severity: "error".to_string(),
                 message: format!("Failed to read AGENTS.md: {err}"),
                 evidence: path.display().to_string(),
+                ..Default::default()
             });
             return (errors, warnings);
         }
@@ -884,6 +1049,7 @@ fn lint_agents_md(path: &Path, strict: bool) -> (Vec<Finding>, Vec<Finding>) {
             severity: "error".to_string(),
             message: "Missing required `## CRITICAL` section.".to_string(),
             evidence: "header: ## CRITICAL".to_string(),
+            ..Default::default()
         });
     }
     if commands.is_empty() {
@@ -892,6 +1058,7 @@ fn lint_agents_md(path: &Path, strict: bool) -> (Vec<Finding>, Vec<Finding>) {
             severity: "error".to_string(),
             message: "Missing required `## Commands` section.".to_string(),
             evidence: "header: ## Commands".to_string(),
+            ..Default::default()
         });
     }
 
@@ -927,6 +1094,7 @@ fn lint_agents_md(path: &Path, strict: bool) -> (Vec<Finding>, Vec<Finding>) {
                 severity: "error".to_string(),
                 message: "CRITICAL section is missing expected NEVER guardrails.".to_string(),
                 evidence: format!("missing topics: {}", missing.join(", ")),
+                ..Default::default()
             });
         }
 
@@ -937,6 +1105,7 @@ fn lint_agents_md(path: &Path, strict: bool) -> (Vec<Finding>, Vec<Finding>) {
                     severity: "error".to_string(),
                     message: format!("Missing ON FAIL recovery guidance for `{topic}`."),
                     evidence: "expected: ON FAIL ...".to_string(),
+                    ..Default::default()
                 });
             }
         }
@@ -948,6 +1117,7 @@ fn lint_agents_md(path: &Path, strict: bool) -> (Vec<Finding>, Vec<Finding>) {
                     severity: "error".to_string(),
                     message: format!("Missing MUST rule for `{topic}` in CRITICAL."),
                     evidence: "expected: MUST ...".to_string(),
+                    ..Default::default()
                 });
             }
         }
@@ -960,6 +1130,7 @@ fn lint_agents_md(path: &Path, strict: bool) -> (Vec<Finding>, Vec<Finding>) {
             severity: "warning".to_string(),
             message: "Missing `agents-md-version` tag.".to_string(),
             evidence: "expected a top-level metadata line".to_string(),
+            ..Default::default()
         });
     }
 
@@ -970,6 +1141,7 @@ fn lint_agents_md(path: &Path, strict: bool) -> (Vec<Finding>, Vec<Finding>) {
                 severity: "error".to_string(),
                 message: format!("Missing essential `{command}` command."),
                 evidence: "search in Commands/CRITICAL".to_string(),
+                ..Default::default()
             });
         }
     }
@@ -981,6 +1153,7 @@ fn lint_agents_md(path: &Path, strict: bool) -> (Vec<Finding>, Vec<Finding>) {
             severity: "error".to_string(),
             message: "Contains TODO/TBD placeholders.".to_string(),
             evidence: "placeholder token present".to_string(),
+            ..Default::default()
         });
     }
 
@@ -995,6 +1168,7 @@ fn lint_agents_md(path: &Path, strict: bool) -> (Vec<Finding>, Vec<Finding>) {
                 severity: "error".to_string(),
                 message: "Broken local markdown link.".to_string(),
                 evidence: target,
+                ..Default::default()
             });
         }
     }
@@ -1004,17 +1178,17 @@ fn lint_agents_md(path: &Path, strict: bool) -> (Vec<Finding>, Vec<Finding>) {
         if re.is_match(&text) {
             let finding = Finding {
                 check_id: "AG011".to_string(),
-                severity: "warning".to_string(),
+                severity: if strict {
+                    "error".to_string()
+                } else {
+                    "warning".to_string()
+                },
                 message: "Contains vague directive phrase.".to_string(),
                 evidence: phrase.to_string(),
+                ..Default::default()
             };
             if strict {
-                errors.push(Finding {
-                    check_id: finding.check_id.clone(),
-                    severity: "error".to_string(),
-                    message: finding.message.clone(),
-                    evidence: finding.evidence.clone(),
-                });
+                errors.push(finding);
             } else {
                 warnings.push(finding);
             }
@@ -1257,6 +1431,7 @@ fn lint_skill(skill_dir: &Path, max_lines: usize) -> (Vec<Finding>, Vec<Finding>
             severity: "error".to_string(),
             message: format!("Not a directory: {}", skill_dir.display()),
             evidence: skill_dir.display().to_string(),
+            ..Default::default()
         });
         return (errors, warnings);
     }
@@ -1268,6 +1443,7 @@ fn lint_skill(skill_dir: &Path, max_lines: usize) -> (Vec<Finding>, Vec<Finding>
             severity: "error".to_string(),
             message: format!("Missing SKILL.md: {}", skill_md.display()),
             evidence: skill_md.display().to_string(),
+            ..Default::default()
         });
         return (errors, warnings);
     }
@@ -1280,6 +1456,7 @@ fn lint_skill(skill_dir: &Path, max_lines: usize) -> (Vec<Finding>, Vec<Finding>
                 severity: "error".to_string(),
                 message: format!("Failed to read SKILL.md: {err}"),
                 evidence: skill_md.display().to_string(),
+                ..Default::default()
             });
             return (errors, warnings);
         }
@@ -1292,6 +1469,7 @@ fn lint_skill(skill_dir: &Path, max_lines: usize) -> (Vec<Finding>, Vec<Finding>
             severity: "error".to_string(),
             message: format!("SKILL.md too long: {line_count} lines (max {max_lines})."),
             evidence: skill_md.display().to_string(),
+            ..Default::default()
         });
         return (errors, warnings);
     }
@@ -1307,6 +1485,7 @@ fn lint_skill(skill_dir: &Path, max_lines: usize) -> (Vec<Finding>, Vec<Finding>
             severity: "error".to_string(),
             message: "SKILL.md contains TODO/TBD placeholders (e.g., [TODO] or TODO:).".to_string(),
             evidence: skill_md.display().to_string(),
+            ..Default::default()
         });
         return (errors, warnings);
     }
@@ -1319,6 +1498,7 @@ fn lint_skill(skill_dir: &Path, max_lines: usize) -> (Vec<Finding>, Vec<Finding>
                 severity: "error".to_string(),
                 message: msg,
                 evidence: skill_md.display().to_string(),
+                ..Default::default()
             });
             return (errors, warnings);
         }
@@ -1331,6 +1511,7 @@ fn lint_skill(skill_dir: &Path, max_lines: usize) -> (Vec<Finding>, Vec<Finding>
                 severity: "error".to_string(),
                 message: msg,
                 evidence: skill_md.display().to_string(),
+                ..Default::default()
             });
             return (errors, warnings);
         }
@@ -1342,6 +1523,7 @@ fn lint_skill(skill_dir: &Path, max_lines: usize) -> (Vec<Finding>, Vec<Finding>
             severity: "error".to_string(),
             message: msg,
             evidence: skill_md.display().to_string(),
+            ..Default::default()
         });
         return (errors, warnings);
     }
@@ -1351,6 +1533,7 @@ fn lint_skill(skill_dir: &Path, max_lines: usize) -> (Vec<Finding>, Vec<Finding>
             severity: "error".to_string(),
             message: msg,
             evidence: skill_md.display().to_string(),
+            ..Default::default()
         });
         return (errors, warnings);
     }
@@ -1365,6 +1548,7 @@ fn lint_skill(skill_dir: &Path, max_lines: usize) -> (Vec<Finding>, Vec<Finding>
                 frontmatter.name, dir_name
             ),
             evidence: skill_md.display().to_string(),
+            ..Default::default()
         });
         return (errors, warnings);
     }
@@ -1379,6 +1563,7 @@ fn lint_skill(skill_dir: &Path, max_lines: usize) -> (Vec<Finding>, Vec<Finding>
                 severity: "error".to_string(),
                 message: format!("SKILL.md links outside skill dir: {link}"),
                 evidence: skill_md.display().to_string(),
+                ..Default::default()
             });
             return (errors, warnings);
         }
@@ -1388,6 +1573,7 @@ fn lint_skill(skill_dir: &Path, max_lines: usize) -> (Vec<Finding>, Vec<Finding>
                 severity: "error".to_string(),
                 message: format!("Broken link target in SKILL.md: {link}"),
                 evidence: skill_md.display().to_string(),
+                ..Default::default()
             });
             return (errors, warnings);
         }
@@ -1419,6 +1605,7 @@ fn lint_skill(skill_dir: &Path, max_lines: usize) -> (Vec<Finding>, Vec<Finding>
                     chained.join(", ")
                 ),
                 evidence: skill_md.display().to_string(),
+                ..Default::default()
             });
             return (errors, warnings);
         }
@@ -1447,6 +1634,7 @@ fn lint_skill(skill_dir: &Path, max_lines: usize) -> (Vec<Finding>, Vec<Finding>
                         missing.join(", ")
                     ),
                     evidence: openai_yaml.display().to_string(),
+                    ..Default::default()
                 });
                 return (errors, warnings);
             }
@@ -1854,6 +2042,8 @@ fn scan_placeholders(
                 .map(|i| start + i)
                 .unwrap_or(text.len());
             let line = &text[line_start..line_end];
+            let line_no = text[..start].bytes().filter(|b| *b == b'\n').count() + 1;
+            let col_no = start.saturating_sub(line_start) + 1;
 
             let is_open_questions = open_questions_span
                 .map(|(s, e)| s <= start && start <= e)
@@ -1869,15 +2059,16 @@ fn scan_placeholders(
                     path.display(),
                     line.trim().chars().take(200).collect::<String>()
                 ),
+                path: Some(path.display().to_string()),
+                line: Some(line_no as u32),
+                col: Some(col_no as u32),
+                ..Default::default()
             };
 
             if allow_warnings_in_open_questions && (is_open_questions || is_declared_open) {
-                warnings.push(Finding {
-                    check_id: finding.check_id.clone(),
-                    severity: "warning".to_string(),
-                    message: finding.message.clone(),
-                    evidence: finding.evidence.clone(),
-                });
+                let mut w = finding.clone();
+                w.severity = "warning".to_string();
+                warnings.push(w);
             } else {
                 errors.push(finding);
             }
@@ -2081,6 +2272,8 @@ fn lint_docset(
                 severity: "error".to_string(),
                 message: "Missing required frontmatter `id`.".to_string(),
                 evidence: path.display().to_string(),
+                line: Some(1),
+                ..Default::default()
             });
             continue;
         }
@@ -2091,6 +2284,7 @@ fn lint_docset(
                 severity: "error".to_string(),
                 message: format!("Duplicate document id: {}", doc.doc_id),
                 evidence: format!("{} and {}", other.path.display(), doc.path.display()),
+                ..Default::default()
             });
             continue;
         }
@@ -2148,6 +2342,7 @@ fn lint_docset(
                     severity: "error".to_string(),
                     message: format!("Use case missing required links.{key} (or explicit N/A)."),
                     evidence: uc.path.display().to_string(),
+                    ..Default::default()
                 });
                 continue;
             };
@@ -2161,6 +2356,7 @@ fn lint_docset(
                     severity: "error".to_string(),
                     message: format!("Use case links.{key} does not resolve to an existing file."),
                     evidence: format!("{}: links.{key}={s:?}", uc.path.display()),
+                    ..Default::default()
                 });
             }
         }
@@ -2177,6 +2373,7 @@ fn lint_docset(
                         severity: "error".to_string(),
                         message: "Broken local markdown link.".to_string(),
                         evidence: format!("{}: {target}", doc.path.display()),
+                        ..Default::default()
                     });
                 }
             }
@@ -2265,6 +2462,7 @@ fn lint_docset(
                         "{}: entity={entity:?}, glossary={glossary_link:?}",
                         uc.path.display()
                     ),
+                    ..Default::default()
                 });
             }
         }
@@ -2286,6 +2484,7 @@ fn lint_docset(
                 severity: "warning".to_string(),
                 message: "H1 header does not start with the frontmatter id.".to_string(),
                 evidence: format!("{}: H1={h1:?}, id={:?}", doc.path.display(), doc.doc_id),
+                ..Default::default()
             });
         }
     }
@@ -2308,6 +2507,7 @@ fn lint_docset(
                 severity: "warning".to_string(),
                 message: "No use case example found under examples/.".to_string(),
                 evidence: examples_path.display().to_string(),
+                ..Default::default()
             });
         }
         if !has_glossary_example {
@@ -2316,6 +2516,7 @@ fn lint_docset(
                 severity: "warning".to_string(),
                 message: "No glossary/entities example found under examples/.".to_string(),
                 evidence: examples_path.display().to_string(),
+                ..Default::default()
             });
         }
 
@@ -2339,6 +2540,7 @@ fn lint_docset(
                 message: "No NFR baseline example found under examples/ (recommended for tier1+)."
                     .to_string(),
                 evidence: examples_path.display().to_string(),
+                ..Default::default()
             });
         }
     }
@@ -2375,18 +2577,15 @@ fn lint_docset(
                 severity: "error".to_string(),
                 message: "Tier2+ use case appears decisionful but no ADR links it via frontmatter links.use_cases.".to_string(),
                 evidence: uc.path.display().to_string(),
+                ..Default::default()
             });
         }
     }
 
     if strict && !warnings.is_empty() {
-        for w in warnings {
-            errors.push(Finding {
-                check_id: w.check_id,
-                severity: "error".to_string(),
-                message: w.message,
-                evidence: w.evidence,
-            });
+        for mut w in warnings {
+            w.severity = "error".to_string();
+            errors.push(w);
         }
         warnings = Vec::new();
     }
@@ -2400,7 +2599,10 @@ fn lint_docset(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Mutex;
     use tempfile::TempDir;
+
+    static ENV_LOCK: Mutex<()> = Mutex::new(());
 
     fn write(path: &Path, text: &str) {
         if let Some(parent) = path.parent() {
@@ -2861,6 +3063,7 @@ mod tests {
                 warning_count: 0,
                 errors: vec![],
                 warnings: vec![],
+                ..Default::default()
             },
             OutputFormat::Text,
         );
@@ -2878,13 +3081,16 @@ mod tests {
                     severity: "error".to_string(),
                     message: "err".to_string(),
                     evidence: "x".to_string(),
+                    ..Default::default()
                 }],
                 warnings: vec![Finding {
                     check_id: "W".to_string(),
                     severity: "warning".to_string(),
                     message: "warn".to_string(),
                     evidence: "x".to_string(),
+                    ..Default::default()
                 }],
+                ..Default::default()
             },
             OutputFormat::Json,
         );
@@ -2905,17 +3111,126 @@ mod tests {
                     severity: "error".to_string(),
                     message: "error".to_string(),
                     evidence: "evidence".to_string(),
+                    ..Default::default()
                 }],
                 warnings: vec![Finding {
                     check_id: "W-1".to_string(),
                     severity: "warning".to_string(),
                     message: "warning".to_string(),
                     evidence: "evidence".to_string(),
+                    ..Default::default()
                 }],
+                ..Default::default()
             },
             OutputFormat::Text,
         );
         assert_eq!(code, 1);
+    }
+
+    #[test]
+    fn github_escape_helpers_cover_expected_escapes() {
+        assert_eq!(gh_escape_data("a%b"), "a%25b");
+        assert_eq!(gh_escape_data("a\nb"), "a%0Ab");
+        assert_eq!(gh_escape_data("a\rb"), "a%0Db");
+        assert_eq!(gh_escape_property("a:b,c"), "a%3Ab%2Cc");
+    }
+
+    #[test]
+    fn best_effort_path_prefers_structured_then_existing_evidence() {
+        let tmp = TempDir::new().unwrap();
+        let existing = tmp.path().join("x.md");
+        fs::write(&existing, "x").unwrap();
+
+        let with_path = Finding {
+            check_id: "X".to_string(),
+            severity: "error".to_string(),
+            message: "m".to_string(),
+            evidence: "ignored".to_string(),
+            path: Some("p.md".to_string()),
+            ..Default::default()
+        };
+        assert_eq!(best_effort_path(&with_path).as_deref(), Some("p.md"));
+
+        let with_evidence = Finding {
+            check_id: "X".to_string(),
+            severity: "error".to_string(),
+            message: "m".to_string(),
+            evidence: existing.display().to_string(),
+            ..Default::default()
+        };
+        assert_eq!(best_effort_path(&with_evidence).as_deref(), Some(with_evidence.evidence.as_str()));
+
+        let none = Finding {
+            check_id: "X".to_string(),
+            severity: "error".to_string(),
+            message: "m".to_string(),
+            evidence: "not-a-file".to_string(),
+            ..Default::default()
+        };
+        assert!(best_effort_path(&none).is_none());
+    }
+
+    #[test]
+    fn github_step_summary_writes_expected_markdown() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let tmp = TempDir::new().unwrap();
+        let summary = tmp.path().join("summary.md");
+        env::set_var("GITHUB_STEP_SUMMARY", &summary);
+
+        let result = LintResult {
+            pass: false,
+            error_count: 1,
+            warning_count: 1,
+            errors: vec![Finding {
+                check_id: "E".to_string(),
+                severity: "error".to_string(),
+                message: "err".to_string(),
+                evidence: "x.md".to_string(),
+                ..Default::default()
+            }],
+            warnings: vec![Finding {
+                check_id: "W".to_string(),
+                severity: "warning".to_string(),
+                message: "warn".to_string(),
+                evidence: "x.md".to_string(),
+                ..Default::default()
+            }],
+            tool_version: "0.1.0".to_string(),
+            standard: "ARSF".to_string(),
+            standard_version: "0.1.0".to_string(),
+            ..Default::default()
+        };
+
+        emit_github_step_summary(&result);
+        let written = fs::read_to_string(&summary).unwrap();
+        assert!(written.contains("# ard lint"));
+        assert!(written.contains("## Errors"));
+        assert!(written.contains("## Warnings"));
+
+        env::remove_var("GITHUB_STEP_SUMMARY");
+    }
+
+    #[test]
+    fn github_annotations_emitter_covers_paths() {
+        // Lightweight coverage: exercise github emission code paths.
+        let result = LintResult {
+            errors: vec![Finding {
+                check_id: "E".to_string(),
+                severity: "error".to_string(),
+                message: "err".to_string(),
+                evidence: "x.md".to_string(),
+                ..Default::default()
+            }],
+            warnings: vec![Finding {
+                check_id: "W".to_string(),
+                severity: "warning".to_string(),
+                message: "warn".to_string(),
+                evidence: "x.md".to_string(),
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+        emit_github_annotations(&result);
     }
 
     #[test]

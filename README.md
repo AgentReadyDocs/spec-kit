@@ -15,6 +15,12 @@ Teams ship faster when specs are:
 
 Canonical quality guidance: `docs/agent-ready-quality.md`.
 
+## Standard: ARSF
+
+`spec-kit` publishes the **Agent-Ready Spec Format (ARSF)**: a versioned, interoperable spec format (Markdown + YAML frontmatter) with conformance profiles and a reference validator (`ard`).
+
+- Standard docs: `docs/arsf/README.md`
+
 ## Try it in 60 seconds
 
 Install the `ard` CLI (verified installer via GitHub Releases):
@@ -74,8 +80,8 @@ jobs:
 
       - name: Lint agent instructions and specs
         run: |
-          ard lint ./AGENTS.md
-          ard lint .
+          ard lint --format github ./AGENTS.md
+          ard lint --format github .
 ```
 
 ## What `ard lint` checks
