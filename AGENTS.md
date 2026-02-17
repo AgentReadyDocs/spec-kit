@@ -39,7 +39,7 @@ agents-md-version: 1
 cargo run -p ard -- lint skill ./skills/authoring-agents-md
 # lint:agents
 cargo run -p ard -- lint agents-md ./AGENTS.md --strict
-# lint:docset
+# lint:docs
 cargo run -p ard -- lint .
 # test
 cargo test -p ard

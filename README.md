@@ -80,7 +80,7 @@ sh install-ard.sh --version <tag>
 
 ```bash
 ard lint ./AGENTS.md
-ard lint .                # docset (docs/ + examples/)
+ard lint .                # docs (docs/ + examples/)
 ard skill install --target codex --target claude --namespace spec-kit --overwrite
 ```
 
@@ -92,7 +92,7 @@ ard skill install --target codex --target claude --namespace spec-kit --overwrit
 
 - `ard lint <path>` (auto-detect)
 - `ard lint agents-md <path>`
-- `ard lint docset <root>`
+- `ard lint docs <root>`
 - `ard lint skill <skill-dir>`
 - `ard skill install ...`
 

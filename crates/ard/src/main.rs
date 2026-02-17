@@ -55,7 +55,7 @@ struct LintCmd {
     /// Output format.
     #[arg(long, value_enum, default_value_t = OutputFormat::Text)]
     format: OutputFormat,
-    /// Optional explicit docset root (used when linting a single doc file).
+    /// Optional explicit docs root (used when linting a single doc file).
     #[arg(long)]
     root: Option<PathBuf>,
     #[command(subcommand)]
@@ -68,8 +68,8 @@ struct LintCmd {
 enum LintSubcommand {
     /// Lint an AGENTS.md file.
     AgentsMd { path: PathBuf },
-    /// Lint a docset directory containing docs/ and/or examples/.
-    Docset {
+    /// Lint a docs directory containing docs/ and/or examples/.
+    Docs {
         root: PathBuf,
         #[arg(long, default_value = "docs")]
         docs_dir: String,
@@ -450,7 +450,7 @@ fn run_lint(cmd: LintCmd) -> i32 {
                 cmd.format,
             )
         }
-        Some(LintSubcommand::Docset {
+        Some(LintSubcommand::Docs {
             root,
             docs_dir,
             examples_dir,
@@ -501,7 +501,7 @@ fn auto_lint_target(path: &Path, root_override: Option<PathBuf>) -> Result<AutoL
             let root = match root_override {
                 Some(root) => root,
                 None => infer_docset_root(canonical.parent().unwrap_or(Path::new("."))).ok_or_else(|| {
-                    "Could not infer docset root for file; pass --root <dir> or lint a directory.".to_string()
+                    "Could not infer docs root for file; pass --root <dir> or lint a directory.".to_string()
                 })?,
             };
             return Ok(AutoLintTarget::DocFile {
@@ -2532,7 +2532,7 @@ mod tests {
         let doc = tmp.path().join("note.md");
         write(&doc, "# note\n");
         let err = auto_lint_target(&doc, None).unwrap_err();
-        assert!(err.contains("Could not infer docset root"));
+        assert!(err.contains("Could not infer docs root"));
     }
 
     #[test]

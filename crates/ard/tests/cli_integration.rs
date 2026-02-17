@@ -161,7 +161,7 @@ fn lint_auto_markdown_with_root_succeeds() {
 }
 
 #[test]
-fn lint_skill_and_docset_subcommands_succeed() {
+fn lint_skill_and_docs_subcommands_succeed() {
     let tmp = TempDir::new().expect("tempdir");
 
     let skill_dir = tmp.path().join("sub-skill");
@@ -184,16 +184,16 @@ fn lint_skill_and_docset_subcommands_succeed() {
         &doc_root.join("docs/uc.md"),
         "---\nid: UC-1111\ntype: use_case\nlinks:\n  glossary: N/A\n  nfr: N/A\n---\n\n# UC-1111: Title\n",
     );
-    let lint_docset = run_ard(&[
+    let lint_docs = run_ard(&[
         "lint",
-        "docset",
+        "docs",
         &doc_root.to_string_lossy(),
         "--docs-dir",
         "docs",
         "--examples-dir",
         "examples",
     ]);
-    assert!(lint_docset.status.success());
+    assert!(lint_docs.status.success());
 }
 
 #[test]
