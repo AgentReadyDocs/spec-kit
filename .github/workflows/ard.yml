@@ -20,4 +20,4 @@ jobs:
       - name: Lint agent instructions and specs
         run: |
           ard lint --format github ./AGENTS.md
-          ard lint --format github .
+          ard conformance run --format github --profile strict .
