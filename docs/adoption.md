@@ -21,17 +21,6 @@ ard lint ./AGENTS.md
 ard lint .
 ```
 
-### Option B: `uvx` (no local install)
-
-Run Python reference linters from GitHub via `uvx`:
-
-```bash
-uvx --from git+https://github.com/AgentReadyDocs/spec-kit@<tag-or-sha> spec-kit-agents-md-lint ./AGENTS.md
-uvx --from git+https://github.com/AgentReadyDocs/spec-kit@<tag-or-sha> spec-kit-docset-lint .
-```
-
-Recommended: pin `<tag-or-sha>` in CI for reproducibility.
-
 ## Installing skills for Codex CLI / Claude
 
 Skills are directories under `skills/` (each with `SKILL.md`). To make them available to your agent tool, you need to copy them into its local skills directory.

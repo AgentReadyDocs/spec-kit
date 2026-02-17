@@ -86,10 +86,7 @@ ard skill install --target codex --target claude --namespace spec-kit --overwrit
 
 ## Linters (CLI)
 
-Packaged CLI linters exist in two forms:
-
-- Rust single-binary: `ard` (recommended for adoption in TS/Go repos)
-- Python reference implementation in `src/spec_kit_linters/` (exposed via `pyproject.toml`)
+`spec-kit` uses a single CLI: `ard`.
 
 `ard` subcommands:
 
@@ -102,30 +99,10 @@ Packaged CLI linters exist in two forms:
 Run locally from the repo:
 
 ```bash
-uv sync
-uv run pytest
-
-# Python reference linters
-uv run spec-kit-skill-lint ./skills/authoring-agents-md
-uv run spec-kit-agents-md-lint ./AGENTS.md
-uv run spec-kit-docset-lint .
-
 # `ard` from source (requires Rust toolchain)
+cargo test -p ard
+cargo llvm-cov -p ard --fail-under-lines 90
 cargo run -p ard -- lint ./AGENTS.md
-```
-
-Run from GitHub without local install:
-
-```bash
-uvx --from git+https://github.com/AgentReadyDocs/spec-kit spec-kit-skill-lint ./skills/authoring-agents-md
-uvx --from git+https://github.com/AgentReadyDocs/spec-kit spec-kit-agents-md-lint ./AGENTS.md
-uvx --from git+https://github.com/AgentReadyDocs/spec-kit spec-kit-docset-lint .
-```
-
-For reproducible runs, pin a tag or commit:
-
-```bash
-uvx --from git+https://github.com/AgentReadyDocs/spec-kit@<tag-or-sha> spec-kit-agents-md-lint ./AGENTS.md
 ```
 
 ## Rubrics

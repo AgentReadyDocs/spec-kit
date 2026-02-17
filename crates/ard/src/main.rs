@@ -748,7 +748,7 @@ fn fail(message: &str) -> i32 {
     1
 }
 
-// ---- agents-md linter (ported from src/spec_kit_linters/agents_md_linter.py) ----
+// ---- agents-md linter ----
 
 const VAGUE_PHRASES: [&str; 5] = [
     "as appropriate",
@@ -1024,7 +1024,7 @@ fn lint_agents_md(path: &Path, strict: bool) -> (Vec<Finding>, Vec<Finding>) {
     (errors, warnings)
 }
 
-// ---- skill linter (ported from src/spec_kit_linters/skill_linter.py) ----
+// ---- skill linter ----
 
 const ALLOWED_FRONTMATTER_KEYS: [&str; 6] = [
     "name",
@@ -1471,7 +1471,7 @@ fn normalize_join(base: &Path, target: &str) -> PathBuf {
     out
 }
 
-// ---- docset linter (ported from src/spec_kit_linters/docset_linter.py) ----
+// ---- docset linter ----
 
 #[derive(Debug, Clone)]
 struct Doc {
@@ -2571,6 +2571,14 @@ mod tests {
     }
 
     #[test]
+    fn parse_frontmatter_supports_literal_multiline_description() {
+        let fm = "name: demo\ndescription: |\n  line one\n\n  line two\n";
+        let parsed = parse_frontmatter(fm).unwrap();
+        assert_eq!(parsed.name, "demo");
+        assert_eq!(parsed.description, "line one\n\nline two");
+    }
+
+    #[test]
     fn validate_name_and_description_rules() {
         assert!(validate_name("good-name").is_none());
         assert!(validate_name("BadName").is_some());
@@ -2881,6 +2889,33 @@ mod tests {
             OutputFormat::Json,
         );
         assert_eq!(fail_code, 1);
+    }
+
+    #[test]
+    fn emit_lint_result_text_with_findings_covers_text_output_branches() {
+        let code = emit_lint_result(
+            LintResult {
+                path: Some("x.md".to_string()),
+                root: None,
+                pass: false,
+                error_count: 1,
+                warning_count: 1,
+                errors: vec![Finding {
+                    check_id: "E-1".to_string(),
+                    severity: "error".to_string(),
+                    message: "error".to_string(),
+                    evidence: "evidence".to_string(),
+                }],
+                warnings: vec![Finding {
+                    check_id: "W-1".to_string(),
+                    severity: "warning".to_string(),
+                    message: "warning".to_string(),
+                    evidence: "evidence".to_string(),
+                }],
+            },
+            OutputFormat::Text,
+        );
+        assert_eq!(code, 1);
     }
 
     #[test]

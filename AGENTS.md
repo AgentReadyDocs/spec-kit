@@ -4,19 +4,18 @@ agents-md-version: 1
 
 ## CRITICAL
 
-- MUST: Use `uv` as the Python package manager and environment manager (`uv sync`, `uv run ...`).
-- MUST: Run skill lint checks before commit when changing `skills/`: `uv run python skills/linters/validate_skill.py <skill-dir>`.
-- MUST: Run test commands before PR: `uv run pytest`.
-- MUST: Use `[project.scripts]` in `pyproject.toml` to change CLI entry points; do not hardcode wrapper paths in docs.
+- MUST: Use `ard` as the only supported CLI for linting/install flows.
+- MUST: Run Rust test commands before PR: `cargo test -p ard`.
+- MUST: Keep line coverage at or above 90%: `cargo llvm-cov -p ard --fail-under-lines 90`.
+- MUST: Keep docs/examples using `ard` commands only (no Python/`uvx` fallback commands).
 - NEVER: Force push (`git push --force`, `git push -f`) to shared branches.
 - NEVER: Bypass hook checks with `--no-verify`.
-- NEVER: Use `pip install`, `poetry install`, or `python -m venv` for project workflows; use `uv` only.
+- NEVER: Re-introduce Python runtime, Python package entrypoints, or `uv`-based CLI workflows.
 - NEVER: Commit secrets, credentials, PII, or customer-identifying data.
-- NEVER: Edit generated caches in `.pytest_cache/` or `__pycache__/`.
 - PREFER: Built-in file/glob/grep/editor tools over shell one-liners when both are equivalent.
-- ON FAIL: Read the full traceback/output before retrying. Confirm `uv sync` completed successfully.
-- ON FAIL (lint): Re-run the failing validator with a narrower target, fix reported path/format issues, then re-run the full validator command.
-- ON FAIL (test): Run the failing file first; if unknown, run `uv run pytest tests/test_agents_md_linter.py -q` then `uv run pytest tests/test_skill_linter.py -q`, then re-run `uv run pytest`.
+- ON FAIL: Read the full traceback/output before retrying.
+- ON FAIL (lint): Run the failing `ard lint ...` target directly, fix the issue, then re-run the broader command.
+- ON FAIL (test): Run `cargo test -p ard` first; if failing, run the reported test target and then re-run full tests.
 
 ## Domain & Context
 
@@ -36,16 +35,16 @@ agents-md-version: 1
 ## Commands
 
 ```bash
-# install
-uv sync                                              # ON FAIL: re-run from repo root; if env is corrupted, verify `pwd` is repo root before recreating `.venv`
 # lint:skill
-uv run python skills/linters/validate_skill.py ./skills/authoring-agents-md  # ON FAIL: fix the reported SKILL.md/link/frontmatter error and re-run
+cargo run -p ard -- lint skill ./skills/authoring-agents-md
 # lint:agents
-uv run python skills/linters/validate_agents_md.py ./AGENTS.md --strict       # ON FAIL: address listed AG* findings, then re-run this command
+cargo run -p ard -- lint agents-md ./AGENTS.md --strict
+# lint:docset
+cargo run -p ard -- lint .
 # test
-uv run pytest                                        # ON FAIL: run failing file first; if unknown run `uv run pytest tests/test_agents_md_linter.py -q` then `uv run pytest tests/test_skill_linter.py -q`
-# lint:packaged-cli (optional sanity check)
-uv run spec-kit-skill-lint ./skills/authoring-agents-md                        # ON FAIL: ensure `uv sync` succeeded and path points to a skill dir with SKILL.md
+cargo test -p ard
+# coverage
+cargo llvm-cov -p ard --fail-under-lines 90
 ```
 
 ## Structure
@@ -55,33 +54,29 @@ docs/               # canonical guidance docs
 examples/           # synthetic example specs
 rubrics/            # grading criteria
 skills/             # author/review workflows
-src/spec_kit_linters/  # packaged CLI linter code
+crates/ard/         # Rust CLI implementation
 templates/          # base spec templates
-tests/              # pytest test suite
-.pytest_cache/      # pytest cache (generated -- do not edit)
-*/__pycache__/      # Python bytecode cache (generated -- do not edit)
 ```
 
 ## Patterns
 
-- **Module:** Python modules with explicit imports (`from ... import ...`), package code under `src/spec_kit_linters`.
+- **Module:** Rust modules/functions in `crates/ard/src/main.rs` plus integration tests in `crates/ard/tests/`.
 - **Async:** synchronous CLI flow for new code; no async event-loop patterns in current implementation.
-- **Naming:** `snake_case.py` files, `snake_case` functions, `PascalCase` dataclasses.
+- **Naming:** `snake_case` functions, Rust enums/structs for domain types.
 - Validator pattern: return structured findings/errors and non-zero exit code for failed checks.
 
 ## Search
 
 - Semantic: `rg -n "rubric|agent-ready|variance|invariant" docs rubrics skills README.md` -- conceptual phrases.
-- Exact: `rg -n "AG[0-9]{3}|ON FAIL|MUST:|NEVER:" src tests skills` -- rule/check references.
-- Files: `rg --files src tests skills templates rubrics` -- fast file inventory.
+- Exact: `rg -n "AG[0-9]{3}|ON FAIL|MUST:|NEVER:" crates skills README.md` -- rule/check references.
+- Files: `rg --files crates skills templates rubrics docs` -- fast file inventory.
 
 ## Testing Strategy
 
-- Runner: `pytest`
-- Fixtures: `tmp_path` filesystem fixtures in `tests/`.
-- Separation: tests mirror linter modules (`test_skill_linter.py`, `test_agents_md_linter.py`).
-- Coverage: No threshold configured.
-- Conventions: assert return codes/findings from linter entry points rather than shelling out.
+- Runner: `cargo test -p ard`
+- Coverage: `cargo llvm-cov -p ard --fail-under-lines 90`
+- Separation: core/unit tests in `crates/ard/src/main.rs`; CLI integration tests in `crates/ard/tests/cli_integration.rs`.
+- Conventions: assert explicit inputs/outputs and check IDs for lint findings.
 
 ## Security
 
@@ -92,14 +87,13 @@ tests/              # pytest test suite
 
 ## Env
 
-- Python: `>=3.10` (`pyproject.toml`)
-- Build backend: `hatchling`
+- Rust: stable toolchain
 
 ```bash
 # Local setup
-uv sync
-# Run package CLI from repo
-uv run spec-kit-agents-md-lint ./AGENTS.md
+cargo build -p ard
+# Run CLI from repo
+cargo run -p ard -- lint ./AGENTS.md
 ```
 
 ## Git
