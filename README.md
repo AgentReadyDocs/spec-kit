@@ -30,6 +30,15 @@ curl -fsSL -o install-ard.sh https://raw.githubusercontent.com/AgentReadyDocs/sp
 sh install-ard.sh --version v0.1.0
 ```
 
+## Supported platforms
+
+`install_ard.sh` supports:
+
+- macOS: `x86_64`, `arm64` (Apple Silicon)
+- Linux: `x86_64` (glibc)
+
+Windows: download the `ard-*-pc-windows-msvc.zip` asset from GitHub Releases and verify it with the matching `.sha256` file.
+
 Run lint checks:
 
 ```bash
@@ -53,6 +62,17 @@ ard lint --format json .
 - DS-ID-001: Missing required frontmatter `id`. (docs/foo.md)
 - DS-CF-004: Tier2+ use case appears decisionful but no ADR links it via frontmatter links.use_cases. (docs/uc-0002.md)
 ```
+
+## Alternatives and tradeoffs
+
+If your goal is “write better specs” rather than “enforce a spec format”, `spec-kit` is probably not the right tool. This project is intentionally a **format + validator** (ARSF + `ard`) so teams can gate correctness and reduce behavioral variance.
+
+Common alternatives:
+
+- **Docs-only templates (wikis, Markdown repos):** low friction, but no deterministic cross-linking and conformance gates; quality is harder to enforce consistently.
+- **General-purpose linters (Markdown/style linters):** great for formatting and broken links, but they typically cannot enforce *spec semantics* (typed errors, required cross-doc links, decision capture).
+
+If you want, open an issue describing your workflow and constraints; we can clarify fit and recommend an adoption path.
 
 ## Add to CI (GitHub Actions)
 
@@ -130,6 +150,13 @@ cargo llvm-cov -p ard --fail-under-lines 90
 cargo run -p ard -- lint ./AGENTS.md
 ```
 
+## Versioning and compatibility
+
+- `ard` (the tool) uses semantic versioning (see `crates/ard/Cargo.toml`).
+- ARSF (the format) is versioned separately (see `docs/arsf/versioning.md`).
+- Machine output includes both `tool_version` and `standard_version` and is described by `schemas/ard/lint_result.schema.json`.
+- Check IDs are designed to be stable so CI policy can key off them; if a breaking change is required, it should land as a major version bump for `ard` and be called out in release notes.
+
 ## Public content policy
 
 All content in this repository is public and intended for open collaboration.
@@ -145,6 +172,12 @@ Licensed under the Apache License, Version 2.0. See `LICENSE`.
 
 Contributions are welcome. Read `CONTRIBUTING.md` before opening a PR.
 By contributing, you agree your contributions are licensed under Apache-2.0.
+
+## Governance (lightweight)
+
+- Issues and PRs are the source of truth for discussion and decisions.
+- Breaking behavior changes should be justified and documented (prefer ADRs where applicable).
+- Maintainership is “maintainer-merge”: changes land via review + CI green; if there’s disagreement, default to the narrowest scope that preserves deterministic behavior.
 
 ## Content and data policy
 
