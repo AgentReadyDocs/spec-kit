@@ -9,7 +9,6 @@ Co-authoring and review skills for creating agent-ready documentation using `spe
 - Elicit requirements and resolve ambiguity
 - Draft specs that satisfy `spec-kit` templates
 - Review specs against `rubrics/*` (including required `rubrics/rubric-guidance.md`)
-- Author and review `AGENTS.md` for repository-level agent instructions
 
 ## Design Rules
 
@@ -20,8 +19,7 @@ Co-authoring and review skills for creating agent-ready documentation using `spe
 
 ## Included Skills
 
-- `authoring-agents-md/`: generate or update `AGENTS.md` and agent import files.
-- `reviewing-agents-md/`: review and score `AGENTS.md` with evidence-backed findings.
+- `extracting-usecases/`: extract use cases from source code by mapping entrypoints to evidence-backed UC stubs (actor + trigger + outputs).
 - `authoring-usecase/`: co-author use cases from template + rubric gate.
 - `reviewing-usecase/`: review/score use cases (read-only).
 - `authoring-adr/`: co-author ADRs from template + rubric gate.
@@ -30,12 +28,6 @@ Co-authoring and review skills for creating agent-ready documentation using `spe
 - `reviewing-nfr/`: review/score NFR baselines (read-only).
 - `authoring-glossary-entities/`: co-author glossary/entities from template + rubric gate.
 - `reviewing-glossary-entities/`: review/score glossary/entities (read-only).
-
-## Linters
-
-- Canonical CLI usage and install notes: `README.md` (see “Linters (CLI)”).
-- Compatibility wrappers used by skills: `skills/linters/`.
-- Agents.md rubric reference: `skills/linters/agents-md-linter-rubric.md`.
 
 ## Skill Structure
 

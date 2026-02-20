@@ -1,0 +1,4 @@
+interface:
+  display_name: "Extracting Use Cases"
+  short_description: "Extract use cases from source code by mapping entrypoints to UC stubs (actor+trigger+outputs)"
+  default_prompt: "Use $extracting-usecases to scan a monorepo or a parent folder of multiple git repos, enumerate all runnable entrypoints (HTTP/webhooks, workers, schedules, file transfers, CLIs/migrations), and draft evidence-backed UC stubs for each entrypoint. Run an author→critic loop: every non-trivial claim must cite path:line with a short quote; unknowns must be marked UNKNOWN and reported. Produce per-repo entrypoints.json, UC stub Markdown files, and coverage/completeness reports, plus workspace-level actors and coverage summaries. Coverage (every entrypoint has a stub) is mandatory; completeness should be maximized but residual UNKNOWNs must be prioritized."
