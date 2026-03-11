@@ -14,11 +14,11 @@ license: "Apache-2.0"
 
 Produce a single use case Markdown document that is implementation-grade and rubric-ready:
 - explicit interface contract (inputs/outputs/constraints/examples)
-- low-variance workflow trace (reads/writes/emits + state_before/state_after)
-- typed errors (codes, retryability, client action, status mapping)
+- low-variance workflow trace (table or numbered steps; includes state_before/state_after per step)
+- typed errors (codes, retryability, client action; status mapping for APIs or exit_code mapping for CLI/batch)
 - idempotency/replay behavior when applicable (required for tier2+)
 - enforceable invariants/policies
-- executable-style acceptance scenarios
+- executable-style acceptance scenarios (detailed or catalog format, with traceability via `validates`)
 
 ## When to use
 
@@ -44,12 +44,13 @@ Use this skill when the user asks to:
 Minimum:
 - `id` (UC-####), `title`, `owner`, `system`, `risk_tier` (tier0..tier3)
 - `links.glossary` and `links.nfr` as relative paths or exact `N/A`
-- primary actors and required permissions/entitlements
+- primary actors and required permissions/entitlements (or explicit `N/A` for non-interactive/offline use cases)
 - inputs/outputs field definitions (type, required, constraints, example)
 - side effects and guarantees
-- AuthZ allow/deny predicates
+- AuthZ allow/deny predicates (or explicit `N/A` when no runtime AuthZ exists)
 - error codes and client actions
 - acceptance scenarios
+- verification/post-conditions checks (if the system has explicit verify/reconcile/health check behaviors)
 
 If the operation can be replayed (retries, double-clicks, webhook re-delivery), require an idempotency decision.
 
@@ -65,9 +66,12 @@ If the operation can be replayed (retries, double-clicks, webhook re-delivery), 
    - Inputs/Outputs tables: every row has `constraints` and a concrete `example`.
    - Side effects: enumerate writes/calls/emits and the guarantee.
 4. Make AuthZ and idempotency explicit
-   - AuthZ rules are predicates; no “should/might”.
+   - AuthZ rules are predicates; no “should/might”, or explicit `N/A` when not applicable.
    - Tier2+: idempotency must be specified or explicitly `N/A` with behavior_on_replay.
 5. Create the low-variance workflow trace
+   - Choose a workflow format:
+     - Table format for linear request/response flows, or
+     - Numbered `### Step N: ...` subsections for complex pipelines.
    - Each step includes reads/writes/emits plus state_before/state_after.
    - Validation and error emission are explicit steps.
 6. Bind edge cases to typed errors
@@ -75,7 +79,8 @@ If the operation can be replayed (retries, double-clicks, webhook re-delivery), 
 7. Add enforceable invariants/policies
    - Use MUST/MUST NOT statements plus enforcement location.
 8. Write acceptance tests as executable scenarios
-   - Scenarios map to acceptance criteria ids and include `test_ref` or exact `N/A`.
+   - Use detailed (Given/When/Then) format for small suites; use catalog format for large suites (for example 15+ scenarios).
+   - Every scenario includes `scenario_id`, `test_ref` (or exact `N/A`), and a `validates` mapping to spec IDs (for example `INV-*`, `ALT-*`, `VER-*`, `EFF-*`).
 9. Self-check gate (hard)
    - Evaluate UC-CF-001..008 as PASS/FAIL with evidence.
    - If any Critical Fail is FAIL, fix the document before proceeding.

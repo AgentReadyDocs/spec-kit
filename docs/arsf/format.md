@@ -31,8 +31,10 @@ Frontmatter:
 Body:
 
 - MUST include an interface contract (inputs and outputs).
-- MUST include a low-variance workflow trace with `state_before` and `state_after`.
+- MUST include a low-variance workflow trace with `state_before` and `state_after` for each step.
+  - The workflow trace MAY be represented as a table or as numbered step subsections, as long as the required state fields are present and coherent.
 - MUST include a typed error catalog and acceptance tests (as defined by the use case rubric).
+  - Systems MAY include explicit verification/post-conditions checks when pass/fail is part of the behavioral contract.
 
 ## ADR (`id: ADR-####`)
 
@@ -78,4 +80,3 @@ Body:
 
 - Template placeholder tokens (e.g. `[Short title]`, `UC-XXXX`, `TODO`) MUST NOT appear in example docs.
 - In real docs, placeholders SHOULD be explicitly marked as `[OPEN]` / `[ASSUMPTION]` with an owner and date where possible.
-

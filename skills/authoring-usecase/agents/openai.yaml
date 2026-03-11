@@ -1,5 +1,4 @@
 interface:
   display_name: "Authoring Use Case"
   short_description: "Draft or tighten a spec-kit use case from template with rubric self-checks"
-  default_prompt: "Use $authoring-usecase to create or update a use case Markdown doc from templates/usecase.md. Ask only for missing facts needed to satisfy rubrics/usecase-rubric.md Critical Fails (UC-CF-001..008). Produce a rubric-ready document and a short self-check summary, then run a critic pass by invoking $reviewing-usecase and apply P1/P2 findings."
-
+  default_prompt: "Use $authoring-usecase to create or update a use case Markdown doc from templates/usecase.md. Ask only for missing facts needed to satisfy rubrics/usecase-rubric.md Critical Fails (UC-CF-001..008). Use a workflow table for linear flows or numbered Step subsections for complex pipelines (state_before/state_after required either way). Allow `N/A` for Actors/AuthZ/Observability when not applicable (offline CLI/batch/ETL). For large test suites, use the Acceptance Tests catalog format with `validates` mapping to spec IDs (INV/ALT/VER/EFF). For errors, use API/service (status) or CLI/batch (exit_code) typed catalogs as appropriate. Produce a rubric-ready document and a short self-check summary, then run a critic pass by invoking $reviewing-usecase and apply P1/P2 findings."

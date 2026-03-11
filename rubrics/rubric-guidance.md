@@ -24,6 +24,21 @@ Behavioral outcomes are the externally observable semantics, typically including
 - Errors (typed codes), status mapping, retryability, and client action.
 - Idempotency/replay behavior when applicable.
 
+## Avoid Implementation Details (Correctness + Reduced Variance)
+
+Specifications should describe **what** the system does (observable outcomes), not **how** it is implemented, unless the mechanism changes observable behavior.
+
+Prefer:
+- “When entity X becomes stale, children Y are deleted and nullable FK Z is set to NULL.”
+- “Junction links are fully refreshed each run; manually-added links for migration-owned rows are not preserved.”
+
+Avoid (unless required for observable outcomes):
+- Exact execution order (“18-step deletion order”) that is only an implementation strategy.
+- Algorithm internals (“5-step email dedup algorithm”) when any correct implementation is acceptable.
+- Internal data structures, private modules, or threading/concurrency mechanics.
+
+If a mechanism is required (for example due to external system constraints), state it as an **invariant/guarantee** (“MUST be safe under replays”, “MUST not violate FK constraints”) rather than prescribing a specific internal sequence.
+
 ## How To Apply Any Rubric (For Agents/Reviewers)
 
 1. Load this file (`rubrics/rubric-guidance.md`) plus the specific rubric file (e.g., `rubrics/usecase-rubric.md`).

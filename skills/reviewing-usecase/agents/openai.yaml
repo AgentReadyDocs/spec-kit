@@ -1,5 +1,4 @@
 interface:
   display_name: "Reviewing Use Case"
   short_description: "Score a spec-kit use case with rubric-bound PASS/FAIL and patch guidance"
-  default_prompt: "Use $reviewing-usecase to review a use case Markdown document (read-only). Load rubrics/rubric-guidance.md and rubrics/usecase-rubric.md. Evaluate Critical Fails UC-CF-001..008 with PASS/FAIL/SKIP evidence, then score UC-S-001..013 to compute score, rating=score/20, and grade. Output the report using the exact format in SKILL.md with at most 15 findings."
-
+  default_prompt: "Use $reviewing-usecase to review a use case Markdown document (read-only). Load rubrics/rubric-guidance.md and rubrics/usecase-rubric.md. Evaluate Critical Fails UC-CF-001..008 with PASS/FAIL/SKIP evidence, then score UC-S-001..013 to compute score, rating=score/20, and grade. Accept either workflow format (table or numbered Step subsections) as long as state_before/state_after are explicit per step. Treat Actors/AuthZ/Observability sections that are explicitly `N/A` as satisfying those checks when the rubric allows. Output the report using the exact format in SKILL.md with at most 15 findings."

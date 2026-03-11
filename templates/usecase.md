@@ -20,6 +20,11 @@ Risk tiers are defined in `templates/nfr.md` under "Risk Tiers (Doc Gates)".
 
 Review this document against `rubrics/usecase-rubric.md` and `rubrics/rubric-guidance.md`.
 
+**Guidance (critical): Specify observable behavior only.**
+- Specify inputs, outputs, state changes, side effects, invariants, and errors.
+- Avoid internal implementation details (execution order, algorithms, data structures, mechanisms) unless they change observable outcomes.
+- This spec should be sufficient to reimplement the module without access to existing source code.
+
 ## Goal
 | goal |
 |------|
@@ -30,7 +35,10 @@ Review this document against `rubrics/usecase-rubric.md` and `rubrics/rubric-gui
 |----------|--------------|
 | [bullet list] | [bullet list] |
 
-## Actors
+## Actors (If Applicable)
+
+If there are no meaningful runtime actors/permissions (e.g., offline CLI / batch / ETL), write a single line `N/A`.
+
 | actor_id | role | permissions |
 |----------|------|-------------|
 | ACTOR_PRIMARY | [role] | [allowed actions] |
@@ -40,6 +48,12 @@ Review this document against `rubrics/usecase-rubric.md` and `rubrics/rubric-gui
 | entity | identifier | notes |
 |--------|------------|-------|
 | [EntityName] | [id field / format] | [notes] |
+
+ETL/migration variant (optional; adapt as needed):
+
+| source_entity | target_entity | cardinality | notes |
+|---------------|---------------|-------------|-------|
+| [SourceEntity] | [TargetEntity] | [1:1 / 1:N / N:1 / N:N] | [notes] |
 
 ## Interface Contract
 
@@ -58,7 +72,10 @@ Review this document against `rubrics/usecase-rubric.md` and `rubrics/rubric-gui
 |----------|------|--------|-----------|-------|
 | EFF-001 | db_write/external_call/event_publish/notification | [target] | [at-most-once/at-least-once/exactly-once] | [notes] |
 
-### AuthZ
+### AuthZ (If Applicable)
+
+If there is no runtime authorization model (e.g., offline CLI / batch / ETL), write a single line `N/A`.
+
 | rule_id | actor_id | condition | decision |
 |---------|----------|-----------|----------|
 | AUTHZ-001 | ACTOR_PRIMARY | [predicate] | allow/deny |
@@ -74,11 +91,40 @@ Review this document against `rubrics/usecase-rubric.md` and `rubrics/rubric-gui
 | PRE-001 | [must already be true] | [how detected] |
 
 ## Workflow (Low-Variance Trace)
+
+Choose the format that best fits the use case:
+- Use the table format for linear request/response flows.
+- Use numbered `### Step N: ...` subsections for complex multi-step pipelines.
+
+### Workflow Format A: Table (recommended for linear flows)
 | step | actor/system | action | reads | writes | emits | state_before | state_after |
 |------|--------------|--------|-------|--------|-------|--------------|-------------|
 | 1 | actor | [command] | [data] | - | - | S0 | S0 |
 | 2 | system | [validate] | [data] | - | - | S0 | S0 |
 | 3 | system | [apply change] | [data] | [data] | [event] | S0 | S1 |
+
+### Workflow Format B: Numbered Steps (recommended for complex pipelines)
+
+Each step MUST include: `actor/system`, `action`, `reads`, `writes`, `emits`, `state_before`, `state_after`.
+
+#### Example shape
+
+### Step 1: [Step name]
+- actor/system: [actor or system component]
+- action: [what happens]
+- reads: [inputs/data sources]
+- writes: [state writes]
+- emits: [events/notifications]
+- state_before: [state label]
+- state_after: [state label]
+
+## Verification / Post-Conditions (If Applicable)
+
+Use this section when the system has explicit post-operation checks (integrity checks, reconciliation, health checks) whose pass/fail is part of the behavioral contract.
+
+| check_id | check | description | pass_criteria |
+|----------|-------|-------------|---------------|
+| VER-001 | [check name] | [what it verifies] | [when it passes] |
 
 ## Alternatives And Edge Cases
 | case_id | condition | behavior | error_code | retryable | user_message | state_impact |
@@ -86,9 +132,20 @@ Review this document against `rubrics/usecase-rubric.md` and `rubrics/rubric-gui
 | ALT-001 | [condition] | [behavior] | [ERR-...] | Y/N | [message] | [none/S0->S1] |
 
 ## Error Catalog (Typed)
+
+Choose the table that matches the interface:
+- Use the API/service table when there is a client/server contract with status codes.
+- Use the CLI/batch table when the primary contract is exit codes and logs.
+
+### Error Catalog Format A: API/Service
 | error_code | condition | detection_point | retryable | client_action | status | message | telemetry_fields |
 |------------|-----------|-----------------|-----------|---------------|--------|---------|------------------|
 | ERR-001 | [condition] | [step] | Y/N | [action] | [e.g. 400] | [message] | [fields] |
+
+### Error Catalog Format B: CLI/Batch
+| error_code | condition | detection_point | retryable | client_action | exit_code | message |
+|------------|-----------|-----------------|-----------|---------------|----------:|---------|
+| ERR-001 | [condition] | [step] | Y/N | [action] | 1 | [message] |
 
 ## Invariants And Policies
 | inv_id | invariant (MUST / MUST NOT) | enforcement | tests |
@@ -96,11 +153,33 @@ Review this document against `rubrics/usecase-rubric.md` and `rubrics/rubric-gui
 | INV-001 | [statement] | [db constraint / code / review gate] | [VS-...] |
 
 ## Acceptance Tests (Executable Scenarios)
+
+Choose the format that best fits the suite size:
+- Use the detailed format when the number of scenarios is small enough to read end-to-end.
+- Use the catalog format for large suites (for example 15+ scenarios), grouped by category.
+
+### Acceptance Tests Format A: Detailed (Given / When / Then)
 | scenario_id | given | when | then | validates | test_ref |
 |-------------|-------|------|------|-----------|----------|
-| VS-001 | [facts/state] | [action] | [observable outcomes] | [AC1, AC2] | [path::test_name] |
+| VS-001 | [facts/state] | [action] | [observable outcomes] | [INV-001, ALT-001, VER-001, EFF-001] | [path::test_name] |
 
-## Observability
+### Acceptance Tests Format B: Catalog (Large Suites)
+| scenario_id | description | validates | test_ref |
+|-------------|-------------|-----------|----------|
+| VS-001 | [1 line scenario intent] | [INV-001, ALT-001, VER-001, EFF-001] | [path::test_name] |
+
+## Deliberate Omissions (If Applicable)
+
+Use this section for “we considered it, and explicitly chose not to do it” items that would otherwise be re-investigated later.
+
+| item | rationale |
+|------|-----------|
+| [field/entity/mapping] | [why it was excluded] |
+
+## Observability (If Applicable)
+
+If this use case has no meaningful observability contract (e.g., offline CLI / batch / ETL), write a single line `N/A`.
+
 | signal | required_fields | sampling | redaction |
 |--------|-----------------|----------|-----------|
 | logs | [fields] | [rate] | [policy] |
@@ -108,6 +187,6 @@ Review this document against `rubrics/usecase-rubric.md` and `rubrics/rubric-gui
 | traces | [span names] | [rate] | [policy] |
 
 ## Open Questions
-| open_id | question | owner | due | impact |
-|---------|----------|-------|-----|--------|
-| OPEN-001 | [question] | [@owner] | YYYY-MM-DD | [blocked AC / blocked step] |
+| open_id | question | status | resolution | owner | due | impact |
+|---------|----------|--------|------------|-------|-----|--------|
+| OPEN-001 | [question] | open | - | [@owner] | YYYY-MM-DD | [blocked VS-/INV-/ALT- row] |

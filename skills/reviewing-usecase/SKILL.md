@@ -55,6 +55,7 @@ Decision rule:
 
 - Read `risk_tier` from YAML front matter.
 - If `risk_tier` is missing/unknown: mark tier2+ checks as SKIP and add a P2 finding to specify the tier.
+- When the rubric allows conditional sections (for example Actors/AuthZ/Observability), treat an explicit single-line `N/A` as satisfying the check.
 
 ## Critical Fails (must report)
 
@@ -112,4 +113,3 @@ Report each Critical Fail from `rubrics/usecase-rubric.md` with PASS/FAIL/SKIP +
 - Evidence: section/table/row
 - Recommendation: minimal patch guidance
 ````
-
