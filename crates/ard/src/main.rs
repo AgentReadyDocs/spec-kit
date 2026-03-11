@@ -3800,6 +3800,39 @@ mod tests {
     }
 
     #[test]
+    fn home_dir_falls_back_to_userprofile_when_home_missing() {
+        let _guard = ENV_LOCK.lock().unwrap();
+
+        struct Restore {
+            home: Option<String>,
+            userprofile: Option<String>,
+        }
+
+        impl Drop for Restore {
+            fn drop(&mut self) {
+                match &self.home {
+                    Some(v) => env::set_var("HOME", v),
+                    None => env::remove_var("HOME"),
+                }
+                match &self.userprofile {
+                    Some(v) => env::set_var("USERPROFILE", v),
+                    None => env::remove_var("USERPROFILE"),
+                }
+            }
+        }
+
+        let _restore = Restore {
+            home: env::var("HOME").ok(),
+            userprofile: env::var("USERPROFILE").ok(),
+        };
+
+        env::set_var("HOME", "");
+        env::set_var("USERPROFILE", "/tmp/ard-userprofile");
+
+        assert_eq!(home_dir(), Some(PathBuf::from("/tmp/ard-userprofile")));
+    }
+
+    #[test]
     fn github_annotations_emitter_covers_paths() {
         // Lightweight coverage: exercise github emission code paths.
         let result = LintResult {
