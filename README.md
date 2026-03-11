@@ -10,6 +10,7 @@ Templates, rubrics, and a single-binary linter (`ard`) for writing **agent-ready
 Teams ship faster when specs are:
 
 - **Executable-style**: acceptance criteria reads like tests and matches real interfaces and errors.
+- **Outcome-focused**: define externally observable behavior (contracts, invariants, typed errors) while leaving internal design open for innovation.
 - **Low-variance**: independent implementations converge on the same externally observable behavior.
 - **Reviewable**: structured artifacts + rubrics allow consistent pass/fail gates.
 
@@ -18,6 +19,8 @@ Canonical quality guidance: `docs/agent-ready-quality.md`.
 ## Standard: ARSF
 
 `spec-kit` publishes the **Agent-Ready Spec Format (ARSF)**: a versioned, interoperable spec format (Markdown + YAML frontmatter) with conformance profiles and a reference validator (`ard`).
+
+ARSF is intentionally about **specifying behavior**, not prescribing architecture or a development methodology.
 
 - Standard docs: `docs/arsf/README.md`
 
@@ -65,14 +68,45 @@ ard lint --format json .
 
 ## Alternatives and tradeoffs
 
-If your goal is “write better specs” rather than “enforce a spec format”, `spec-kit` is probably not the right tool. This project is intentionally a **format + validator** (ARSF + `ard`) so teams can gate correctness and reduce behavioral variance.
+If your goal is “write better specs” rather than “enforce a spec format”, `spec-kit` is probably not the right tool. This project is intentionally a **format + validator** (ARSF + `ard`) so teams can deterministically gate correctness and reduce behavioral variance in **externally observable outcomes**.
 
-Common alternatives:
+`spec-kit` standardizes **what the system does** (interfaces, errors, invariants, acceptance criteria) while leaving **how you implement it** (language, framework, architecture, internals) open for innovation. It focuses on specifications, not implementation or a development process.
+
+Common alternatives and adjacent tools:
 
 - **Docs-only templates (wikis, Markdown repos):** low friction, but no deterministic cross-linking and conformance gates; quality is harder to enforce consistently.
 - **General-purpose linters (Markdown/style linters):** great for formatting and broken links, but they typically cannot enforce *spec semantics* (typed errors, required cross-doc links, decision capture).
 
+### Notable alternatives and adjacent tools
+
+The ecosystem has good options depending on what you want to optimize for (workflow guidance, interface contracts, prose/style, or CI-verifiable spec conformance).
+
+| Option | What it is | Best fit | Where `spec-kit` fits |
+| --- | --- | --- | --- |
+| [GitHub Spec Kit][GitHub Spec Kit] | A spec-driven toolkit and templates centered on the `specify` CLI (with agent/tool integrations). | You want a **guided spec→plan→tasks workflow** with a batteries-included project scaffold. | Use `spec-kit` when you want a **standardized, tool-agnostic spec format** (ARSF) and **deterministic CI conformance** (`ard`) focused on externally observable behavior. |
+| [OpenSpec][OpenSpec] | A spec-driven repo workflow for AI-assisted changes (change folders and a CLI). | You want a **guided spec→tasks loop** and an auditable change history. | Use `spec-kit` when you also want a **public, versioned format** (ARSF) plus **deterministic CI gates** (`ard`) for behavioral outcomes. |
+| [BMAD Method][BMAD Method] | A methodology + agent workflow system for planning and delivery. | You want an **end-to-end process** (roles, flows, and artifacts) more than a spec standard. | `spec-kit` stays intentionally narrow: **interoperable artifacts + validation**, not a methodology suite. |
+| [Kiro IDE spec workflows][Kiro IDE spec workflows] | IDE-integrated spec workflows (design-first specs, bugfix specs, task hooks). | You want **IDE-native** structured flows and review ergonomics. | `spec-kit` is **tool/IDE agnostic**: it standardizes the docs and makes conformance enforceable across editors and CI. |
+| [OpenAPI][OpenAPI] / [AsyncAPI][AsyncAPI] (plus [Spectral][Spectral]) | Interface contract standards and linters for APIs/events. | Your primary deliverable is a **machine-consumable interface spec**. | Complementary: use OpenAPI/AsyncAPI for interface-level contracts, and `spec-kit` for the broader **use cases, ADRs, NFRs, glossary**, and cross-doc traceability gates. |
+| [Vale][Vale] / [markdownlint][markdownlint] | Prose and Markdown hygiene linters. | You mainly need **style/readability** enforcement. | Complementary: `spec-kit` focuses on **spec semantics and docset consistency**, not prose style. |
+
+How to choose quickly:
+
+- Choose `spec-kit` if you want a **standard + validator** you can rely on for deterministic CI pass/fail gates.
+- Choose GitHub Spec Kit / OpenSpec / BMAD / Kiro-style workflows if you primarily want a **guided authoring/execution loop**; add `spec-kit` when you need **interoperable artifacts** and enforceable conformance.
+- Choose OpenAPI/AsyncAPI when the contract itself is the product; use `spec-kit` to capture the surrounding decisions, invariants, and acceptance criteria in a low-variance way.
+
 If you want, open an issue describing your workflow and constraints; we can clarify fit and recommend an adoption path.
+
+[GitHub Spec Kit]: https://github.com/github/spec-kit
+[OpenSpec]: https://github.com/Fission-AI/OpenSpec
+[BMAD Method]: https://github.com/bmad-code-org/BMAD-METHOD
+[Kiro IDE spec workflows]: https://kiro.dev/changelog/ide/0-10/
+[OpenAPI]: https://www.openapis.org/
+[AsyncAPI]: https://www.asyncapi.com/
+[Spectral]: https://github.com/stoplightio/spectral
+[Vale]: https://github.com/errata-ai/vale
+[markdownlint]: https://github.com/DavidAnson/markdownlint
 
 ## Add to CI (GitHub Actions)
 
