@@ -57,6 +57,15 @@ Decision rule:
 - If `risk_tier` is missing/unknown: mark tier2+ checks as SKIP and add a P2 finding to specify the tier.
 - When the rubric allows conditional sections (for example Actors/AuthZ/Observability), treat an explicit single-line `N/A` as satisfying the check.
 
+## Rewrite/migration checks (optional)
+
+When the UC front matter includes `capabilities: [...]` or `tier:` fields, also evaluate the optional checks from the rubric (UC-OPT-001 through UC-OPT-005). These produce advisory P2/P3 findings, not score deductions:
+- **UC-OPT-001**: Capabilities Referenced populated with at least one ID.
+- **UC-OPT-002**: Essential Complexity names domain complexities this UC must handle.
+- **UC-OPT-003**: Simplification Notes justifies at least one design change with rationale.
+- **UC-OPT-004**: Workflow steps referencing behavior owned by another UC include cross-references.
+- **UC-OPT-005**: Multi-operation UCs have separate Input/Output/Workflow subsections per operation.
+
 ## Critical Fails (must report)
 
 Report each Critical Fail from `rubrics/usecase-rubric.md` with PASS/FAIL/SKIP + evidence:
@@ -102,6 +111,15 @@ Report each Critical Fail from `rubrics/usecase-rubric.md` with PASS/FAIL/SKIP +
 | UC-S-011 | 6 | X | 1 line | EVIDENCE |
 | UC-S-012 | 6 | X | 1 line | EVIDENCE |
 | UC-S-013 | 4 | X | 1 line | EVIDENCE |
+
+## Rewrite/Migration Checks (if applicable)
+| check_id | result | evidence |
+|---|---|---|
+| UC-OPT-001 | PASS|FAIL|SKIP | EVIDENCE |
+| UC-OPT-002 | PASS|FAIL|SKIP | EVIDENCE |
+| UC-OPT-003 | PASS|FAIL|SKIP | EVIDENCE |
+| UC-OPT-004 | PASS|FAIL|SKIP | EVIDENCE |
+| UC-OPT-005 | PASS|FAIL|SKIP | EVIDENCE |
 
 ## Strengths
 - 3 to 6 evidence-backed bullets

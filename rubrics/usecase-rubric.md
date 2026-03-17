@@ -39,7 +39,7 @@ If you cannot load the required inputs, return FAIL with reason `MISSING_INPUT: 
 
 | check_id | points | applies_to | pass_criteria | evidence |
 |---|---:|---|---|---|
-| UC-S-001 | 8 | all | Front matter includes stable `id`, `risk_tier`, `system`, and `links.glossary`/`links.nfr` (or explicit `N/A`). | YAML front matter |
+| UC-S-001 | 8 | all | Front matter includes stable `id`, `risk_tier`, `system`, and `links.glossary`/`links.nfr` (or explicit `N/A`). Optional fields `tier`, `journey_parent`, `service`, `capabilities` earn no extra points but should use `N/A` or `~` (not omitted) when not applicable. | YAML front matter |
 | UC-S-002 | 8 | all | Goal is a single outcome sentence; scope clearly separates in/out. | `## Goal`, `## Scope` |
 | UC-S-003 | 6 | all | Actors include roles and concrete permissions/entitlements, or the section is explicitly `N/A` for non-interactive/offline use cases. | `## Actors (If Applicable)` |
 | UC-S-004 | 12 | all | Interface contract is complete: inputs/outputs include constraints + examples; side effects list kind/target/guarantee. | `## Interface Contract` |
@@ -51,4 +51,16 @@ If you cannot load the required inputs, return FAIL with reason `MISSING_INPUT: 
 | UC-S-010 | 6 | tier1+ | Invariants/policies are enforceable (db/code/gate) and reference validating scenarios/tests. | `## Invariants And Policies` |
 | UC-S-011 | 6 | all | Acceptance tests are written as executable scenarios and cover the critical path + at least one failure path. | `## Acceptance Tests (Executable Scenarios)` |
 | UC-S-012 | 6 | all | Observability defines minimum logs/metrics/traces and includes redaction requirements where needed, or the section is explicitly `N/A` for offline/non-service use cases. | `## Observability (If Applicable)` |
-| UC-S-013 | 4 | all | Open questions are empty or each has status + owner + due date + impact (resolved items include a resolution). | `## Open Questions` |
+| UC-S-013 | 4 | all | Open questions are empty or each has status + owner + due date + impact (resolved items include a resolution). Due date accepts `YYYY-MM-DD`, `tbd` (awaiting triage), or `deferred` (intentionally postponed with rationale). A blank or `-` due date loses 1 point per question (max 2 point deduction). | `## Open Questions` |
+
+## Optional Checks — Rewrite/Migration Projects
+
+These checks apply when the UC is part of a rewrite or migration project that uses capability extraction. They are not scored — they produce advisory P2/P3 findings only.
+
+| check_id | pass_criteria | evidence |
+|---|---|---|
+| UC-OPT-001 | `## Capabilities Referenced` is populated with at least one capability ID per UC. | `## Capabilities Referenced (If Applicable)` |
+| UC-OPT-002 | `## Essential Complexity` explicitly names the domain complexities this UC must handle. | `## Essential Complexity (If Applicable)` |
+| UC-OPT-003 | `## Simplification Notes` justifies at least one design change from the current system with a rationale. | `## Simplification Notes (If Applicable)` |
+| UC-OPT-004 | Workflow steps that describe behavior owned by another UC include a cross-reference (e.g., "See UC-XXXX") rather than a full duplicate trace. | `## Workflow (Low-Variance Trace)` |
+| UC-OPT-005 | Multi-operation UCs have separate Input/Output/Workflow subsections per operation. | `## Interface Contract`, `## Workflow` |
