@@ -54,6 +54,23 @@ Minimum:
 
 If the operation can be replayed (retries, double-clicks, webhook re-delivery), require an idempotency decision.
 
+## Tier-Based Section Guide
+
+When the user specifies a tier, use this to decide which sections to fill vs skip:
+
+| Section | Tier 1 (journey) | Tier 2 (workflow) | Tier 3 (building block) |
+|---------|------------------|-------------------|-------------------------|
+| Interface Contract | Skip | Full | Full |
+| Capabilities Referenced | Light (key IDs) | Full | Full |
+| Essential Complexity | Full | Full | Full |
+| Simplification Notes | Full | Full | If applicable |
+| Actors | Light | Full | N/A if no runtime auth |
+| Workflow | High-level numbered steps | Full trace with state | Full trace with state |
+| Acceptance Tests | 5–8 scenarios | 8–15 scenarios | 8–12 scenarios |
+| Error Catalog | Skip | Full | Full |
+| Invariants | Skip | Full | Full |
+| Observability | Skip | Full | If applicable |
+
 ## Workflow (decision-complete)
 
 1. Resolve the target file
@@ -62,6 +79,7 @@ If the operation can be replayed (retries, double-clicks, webhook re-delivery), 
 2. Fill YAML front matter
    - `id`, `type: use_case`, `title`, `status`, `owner`, `risk_tier`, `system`
    - `links.glossary` and `links.nfr` must be a relative path or exact `N/A` (single token, no prose).
+   - Optional fields: `tier` (1/2/3), `journey_parent` (UC-XXXX or N/A), `service` (bounded context name), `capabilities` (list of IDs).
 3. Write the interface contract first
    - Inputs/Outputs tables: every row has `constraints` and a concrete `example`.
    - Side effects: enumerate writes/calls/emits and the guarantee.
@@ -74,6 +92,9 @@ If the operation can be replayed (retries, double-clicks, webhook re-delivery), 
      - Numbered `### Step N: ...` subsections for complex pipelines.
    - Each step includes reads/writes/emits plus state_before/state_after.
    - Validation and error emission are explicit steps.
+   - **Multi-operation UCs**: If the UC covers multiple operations (e.g., Create/Update/Delete on the same aggregate), create separate workflow subsections per operation. Share invariants and error catalog across operations.
+   - **Cross-UC behavior**: If a workflow step describes behavior owned by a different UC, add a cross-reference note ("See UC-XXXX") instead of duplicating the full trace. This prevents ownership ambiguity.
+   - **Read-only derivations**: Steps that compute a projection as part of the response contract are valid workflow steps — they are observable behavior.
 6. Bind edge cases to typed errors
    - Every edge case maps to an error_code in the typed catalog.
 7. Add enforceable invariants/policies
@@ -81,10 +102,16 @@ If the operation can be replayed (retries, double-clicks, webhook re-delivery), 
 8. Write acceptance tests as executable scenarios
    - Use detailed (Given/When/Then) format for small suites; use catalog format for large suites (for example 15+ scenarios).
    - Every scenario includes `scenario_id`, `test_ref` (or exact `N/A`), and a `validates` mapping to spec IDs (for example `INV-*`, `ALT-*`, `VER-*`, `EFF-*`).
-9. Self-check gate (hard)
+9. Fill rewrite-specific sections (if applicable)
+   - If the UC is part of a rewrite/migration project:
+     - **Capabilities Referenced**: List all capability IDs this UC implements, with name and domain.
+     - **Essential Complexity**: Name each inherent domain complexity and how the rewrite preserves it.
+     - **Simplification Notes**: For each piece of incidental complexity eliminated, document what the current system does, what the rewrite does, and why the change is justified.
+   - These sections enforce forward-looking design. If you find yourself copying the current system's approach without justification, add a Simplification Notes entry explaining why.
+10. Self-check gate (hard)
    - Evaluate UC-CF-001..008 as PASS/FAIL with evidence.
    - If any Critical Fail is FAIL, fix the document before proceeding.
-10. Critic loop (required)
+11. Critic loop (required)
    - Run `$reviewing-usecase` on the doc path.
    - Apply P1 and P2 findings, then re-run the self-check gate.
 

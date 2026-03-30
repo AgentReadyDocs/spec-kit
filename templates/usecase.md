@@ -6,6 +6,10 @@ status: draft  # draft | ready
 owner: "@owner"
 risk_tier: tier1  # tier0 | tier1 | tier2 | tier3
 system: "[System name]"
+tier: ~  # 1 (journey) | 2 (workflow) | 3 (building block) | ~ if not applicable
+journey_parent: ~  # UC-XXXX for Tier 2/3; ~ or N/A for Tier 1 / standalone
+service: ~  # bounded context / service that owns this UC; ~ if not applicable
+capabilities: []  # capability IDs this UC implements (e.g., [POG-001, FIX-006]); [] if not applicable
 links:
   glossary: "../templates/glossary-entities.md"
   nfr: "../templates/nfr.md"
@@ -34,6 +38,30 @@ Review this document against `rubrics/usecase-rubric.md` and `rubrics/rubric-gui
 | in_scope | out_of_scope |
 |----------|--------------|
 | [bullet list] | [bullet list] |
+
+## Capabilities Referenced (If Applicable)
+
+Use this section when the UC implements capabilities extracted from an existing system (rewrite/migration projects). Maps many-to-many from this UC to source capability IDs.
+
+| capability_id | name | domain |
+|---------------|------|--------|
+| [CAP-001] | [capability name] | [domain name] |
+
+## Essential Complexity (If Applicable)
+
+Use this section to document inherent domain complexity that any implementation must handle. Reference complexity IDs from a complexity inventory if one exists.
+
+| complexity_id | description | how_preserved |
+|---------------|-------------|---------------|
+| [E-01] | [what makes this inherently complex] | [how the rewrite handles it] |
+
+## Simplification Notes (If Applicable)
+
+Use this section to document what incidental complexity is eliminated in the rewrite and why. This enforces forward-looking design rather than copying the current system.
+
+| eliminated | current_approach | rewrite_approach | rationale |
+|------------|------------------|------------------|-----------|
+| [I-01 description] | [how it works today] | [how the rewrite does it] | [why the change] |
 
 ## Actors (If Applicable)
 
@@ -95,6 +123,9 @@ If there is no runtime authorization model (e.g., offline CLI / batch / ETL), wr
 Choose the format that best fits the use case:
 - Use the table format for linear request/response flows.
 - Use numbered `### Step N: ...` subsections for complex multi-step pipelines.
+- **Multi-operation UCs**: If this UC covers multiple operations on the same aggregate (e.g., Create/Update/Delete), create separate workflow subsections per operation and share the invariants/error catalog across them.
+- **Read-only derivations**: Steps that compute a read-only projection as part of the response contract (e.g., deriving a user-visible status from internal state) are valid workflow steps.
+- **Cross-UC behavior**: If a step describes behavior owned by another UC, add a cross-reference note (e.g., "See UC-XXXX") rather than duplicating the full trace.
 
 ### Workflow Format A: Table (recommended for linear flows)
 | step | actor/system | action | reads | writes | emits | state_before | state_after |
@@ -187,6 +218,9 @@ If this use case has no meaningful observability contract (e.g., offline CLI / b
 | traces | [span names] | [rate] | [policy] |
 
 ## Open Questions
+
+Due dates should be `YYYY-MM-DD` when known. Use `tbd` for questions awaiting triage, or `deferred` with a rationale for questions intentionally postponed. Avoid leaving `due` blank — an explicit `tbd` signals intent to assign a date later.
+
 | open_id | question | status | resolution | owner | due | impact |
 |---------|----------|--------|------------|-------|-----|--------|
-| OPEN-001 | [question] | open | - | [@owner] | YYYY-MM-DD | [blocked VS-/INV-/ALT- row] |
+| OPEN-001 | [question] | open | - | [@owner] | YYYY-MM-DD / tbd / deferred | [blocked VS-/INV-/ALT- row] |
